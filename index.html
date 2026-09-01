@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Sympoiesis</title>
+  <meta name="description" content="전시 방명록 — 링 위 가지 끝마다 한 줄이 맺힌다." />
+  <meta name="theme-color" content="#F2F0E9" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500&family=IBM+Plex+Mono:wght@400&display=swap" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="gl"></canvas>
+
+    <!-- 3D 위에 떠 있는 텍스트 레이어 (라벨 · 포커스 카드) -->
+    <div id="overlay" aria-hidden="true"></div>
+
+    <!-- 화면 계기 -->
+    <header id="hud-top">
+      <span class="hud-l" id="hud-title">SYMPOIESIS · GUESTBOOK</span>
+      <span class="hud-r" id="hud-stat">CONNECTING…</span>
+    </header>
+
+    <!-- 하단 그라데이션 (입력부 가독성) -->
+    <div id="scrim"></div>
+
+    <!-- 입력 -->
+    <section id="composer" data-state="idle">
+      <div class="cmp-card">
+        <label class="cmp-lead" for="cmp-body">여기에 한 줄 남기기</label>
+        <textarea id="cmp-body" rows="1" maxlength="140" autocomplete="off"
+                  spellcheck="false" enterkeyhint="send"
+                  placeholder="오늘 무엇을 보았나요"></textarea>
+        <div class="cmp-meta">
+          <input id="cmp-nick" type="text" maxlength="16" autocomplete="off"
+                 spellcheck="false" placeholder="닉네임 (선택)" />
+          <div class="cmp-right">
+            <span id="cmp-count" class="cmp-count">0 / 140</span>
+            <button id="cmp-send" type="button">
+              남기기 <span class="ret">&#8629;</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <p id="cmp-toast" class="cmp-toast" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- 관리자 숨김 (Ctrl+Shift+H) -->
+    <div id="admin" hidden>
+      <div class="admin-card">
+        <p class="admin-title">이 기록을 숨깁니다</p>
+        <p class="admin-body" id="admin-target"></p>
+        <input id="admin-pin" type="password" inputmode="numeric"
+               autocomplete="off" placeholder="관리자 PIN" />
+        <div class="admin-row">
+          <button id="admin-cancel" type="button" class="ghost">취소</button>
+          <button id="admin-ok" type="button">숨기기</button>
+        </div>
+        <p class="admin-msg" id="admin-msg"></p>
+      </div>
+    </div>
+
+    <!-- 첫 진입 안내 (몇 초 뒤 사라짐) -->
+    <p id="hint">기록 위에 <b>마우스를 올리면</b> 회전이 멈추고 그 문장이 커집니다</p>
+  </div>
+
+  <noscript>
+    <p style="padding:2rem;font-family:sans-serif">이 방명록은 JavaScript 가 필요합니다.</p>
+  </noscript>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
