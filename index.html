@@ -5,61 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Sympoiesis</title>
   <meta name="color-scheme" content="light" />
-  <meta name="theme-color" content="#d9d2c4" />
+  <meta name="theme-color" content="#ffffff" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" />
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Architects+Daughter&display=swap" />
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
 </head>
 
 <body>
-  <div class="grain" aria-hidden="true"></div>
+  <header class="head">
+    <h1>Sympoiesis</h1>
+  </header>
 
-  <div class="sheet">
+  <!-- 모눈 · 숫자 · 채워진 칸이 모두 여기 그려진다 -->
+  <canvas id="paper"></canvas>
 
-    <header class="masthead">
-      <h1 class="wordmark">Sympoiesis</h1>
-      <p class="colophon">
-        <span>Guestbook</span>
-        <i class="tick" aria-hidden="true"></i>
-        <span class="count" id="count">000</span>
-      </p>
-    </header>
-
-    <section class="stage">
-      <canvas id="gl"></canvas>
-      <p class="fig">
-        <span>Fig.&nbsp;1</span>
-        <i class="tick" aria-hidden="true"></i>
-        <span id="figstate">Loading</span>
-      </p>
-    </section>
-
-    <section class="record">
-      <!-- 잉크 층 — 아래 텍스트 블록의 패딩 경계를 따라 울렁인다 -->
-      <canvas class="ink" id="ink" aria-hidden="true"></canvas>
-
-      <div class="body" id="body">
-        <ol class="feed" id="feed"></ol>
-
-        <form class="compose" id="compose" autocomplete="off">
-          <input id="entry" type="text" maxlength="80" spellcheck="false"
-                 aria-label="한 줄 남기기" placeholder="한 줄 남기기" />
-          <button type="submit" aria-label="남기기">
-            <svg width="15" height="9" viewBox="0 0 15 9" aria-hidden="true">
-              <path d="M0 4.5h13M9.5 1L13 4.5 9.5 8" fill="none"
-                    stroke="currentColor" stroke-width="1" />
-            </svg>
-          </button>
-        </form>
-      </div>
-    </section>
-
+  <!-- 칸을 누르면 뜨는 방명록 -->
+  <div class="note" id="note" hidden>
+    <p class="note-n" id="note-n"></p>
+    <p class="note-t" id="note-t"></p>
+    <p class="note-d" id="note-d"></p>
   </div>
+
+  <form class="compose" id="compose" autocomplete="off">
+    <input id="entry" type="text" maxlength="80" spellcheck="false"
+           placeholder="한 줄 남기기" aria-label="한 줄 남기기" />
+    <button type="submit" aria-label="남기기">
+      <svg width="15" height="9" viewBox="0 0 15 9" aria-hidden="true">
+        <path d="M0 4.5h13M9.5 1L13 4.5 9.5 8" fill="none"
+              stroke="currentColor" stroke-width="1" />
+      </svg>
+    </button>
+  </form>
 
   <script type="module" src="/src/main.ts"></script>
 </body>

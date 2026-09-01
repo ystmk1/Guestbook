@@ -1,32 +1,21 @@
 /* =====================================================================
-   SYMPOIESIS · Guestbook
-   International Typographic Style — 그리드, 헤어라인, 좌측 정렬 비대칭.
-   색은 레퍼런스(잉크가 활자를 덮은 인쇄물)에서 가져왔다.
+   Sympoiesis · Guestbook
+   모눈 종이 한 장. 제호와 입력줄 말고는 아무것도 얹지 않는다.
    ===================================================================== */
 
 :root {
-  /* 종이 → 잉크 */
-  --paper:     #d9d2c4;
-  --paper-hi:  #e3ddd1;
-  --paper-lo:  #cbc3b3;
-  --ink:       #15110d;
-  --sepia:     #6b5f51;
-  --sepia-hi:  #8a7d6d;
+  --head: 62px;
+  --ink: #171717;
+  --pencil: rgba(24, 24, 24, 0.42);
+  --hair: rgba(24, 24, 24, 0.12);
+  --accent: #c8452f;
 
-  --hair: rgba(21, 17, 13, 0.22);
-  --hair-soft: rgba(21, 17, 13, 0.11);
-
-  /* 조판 */
-  --sans: "Inter", "Pretendard Variable", Pretendard, "Helvetica Neue",
-          Helvetica, Arial, sans-serif;
-
-  --gap: clamp(20px, 3.2vw, 46px);   /* 판면 여백 */
-  --pad: clamp(22px, 2.6vw, 40px);   /* 텍스트 박스 패딩 = 블롭이 따라가는 경계 */
+  --sans: "Inter", "Pretendard Variable", Pretendard, -apple-system,
+          "Helvetica Neue", Arial, sans-serif;
 
   color-scheme: light;
 }
 
-/* 커닝·합자·타뷸러 숫자를 전역으로 켠다 — 조판의 기본기 */
 * {
   box-sizing: border-box;
   font-kerning: normal;
@@ -39,263 +28,163 @@ html, body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: var(--paper);
+  background: #fff;
   color: var(--ink);
   font-family: var(--sans);
   text-rendering: optimizeLegibility;
 }
 
-/* ── 종이 결 ────────────────────────────────────────────────────────
-   feTurbulence 를 데이터 URI 로 한 번만 래스터라이즈한다. 매 프레임
-   비용이 없고, 화면 전체에 인쇄물 특유의 거친 입자를 얹는다. */
-.grain {
+/* ── 제호 ───────────────────────────────────────────────────────── */
+.head {
   position: fixed;
-  inset: -50%;
-  z-index: 9;
-  pointer-events: none;
-  opacity: 0.42;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'>\
-<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/>\
-<feColorMatrix type='saturate' values='0'/></filter>\
-<rect width='180' height='180' filter='url(%23n)' opacity='0.5'/></svg>");
-  background-size: 180px 180px;
-}
-
-/* ── 판면 ──────────────────────────────────────────────────────────
-   masthead / stage / record 3단. record 는 내용이 쌓여도 판면을
-   밀어내지 않게 고정 높이를 쓰고 내부에서 스크롤한다. */
-.sheet {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  padding: var(--gap);
-  gap: clamp(14px, 1.6vw, 26px);
-}
-
-/* ── 제호 ──────────────────────────────────────────────────────── */
-.masthead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--hair);
-}
-
-.wordmark {
-  margin: 0;
-  font-size: clamp(27px, 3.9vw, 52px);
-  font-weight: 500;
-  /* 큰 크기일수록 자간을 조인다 — 광학 보정 */
-  letter-spacing: -0.038em;
-  line-height: 0.92;
-  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1;
-}
-
-.colophon {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.19em;
-  text-transform: uppercase;
-  color: var(--sepia);
-  white-space: nowrap;
-}
-
-.count {
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-
-/* 항목 구분 틱 — 가운뎃점 대신 쓰는 헤어라인 */
-.tick {
-  display: block;
-  width: 14px;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.5;
-}
-
-/* ── 오브젝트 ───────────────────────────────────────────────────── */
-.stage {
-  position: relative;
-  min-height: 0;
-}
-
-/* 캔버스는 판면 칸을 그대로 채운다. 그리드 정렬에 크기를 맡기면
-   비어 보이는 칸이 생길 수 있어 절대 배치로 못박는다. */
-#gl {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.fig {
-  position: absolute;
+  top: 0;
   left: 0;
-  bottom: 0;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.19em;
-  text-transform: uppercase;
-  color: var(--sepia);
-  pointer-events: none;
-}
-
-/* ── 기록 ──────────────────────────────────────────────────────── */
-.record {
-  position: relative;
-  height: clamp(210px, 34vh, 340px);
-}
-
-/* 잉크 블롭이 그려지는 층 */
-.ink {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-/* 블롭 위에 얹히는 실제 텍스트 박스. 패딩이 곧 블롭의 경계다. */
-.body {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  padding: var(--pad);
+  right: 0;
+  height: var(--head);
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 14px;
+  place-items: center;
+  background: #fff;
+  z-index: 3;
 }
 
-/* ── 누적되는 줄 ───────────────────────────────────────────────── */
-.feed {
-  list-style: none;
+.head h1 {
   margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  /* 위쪽으로 사라지는 줄을 부드럽게 — 잉크에 잠기는 것처럼 */
-  mask-image: linear-gradient(to bottom, transparent 0, #000 26px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26px);
-}
-
-.feed::-webkit-scrollbar { display: none; }
-
-.feed li {
-  display: grid;
-  grid-template-columns: 3.4em 1fr;
-  gap: 0 1.1em;
-  align-items: baseline;
-  padding: 3px 0;
-  color: var(--paper-hi);
-  animation: settle 620ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
-}
-
-@keyframes settle {
-  from { opacity: 0; transform: translateY(7px); }
-  to   { opacity: 1; transform: none; }
-}
-
-.feed .n {
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.13em;
-  font-variant-numeric: tabular-nums;
-  color: rgba(217, 210, 196, 0.42);
-  text-align: right;
-}
-
-.feed .t {
-  font-size: clamp(14px, 1.42vw, 18px);
-  font-weight: 300;
-  line-height: 1.5;
+  font-size: 21px;
+  font-weight: 400;
   letter-spacing: -0.012em;
+}
+
+/* ── 모눈 ───────────────────────────────────────────────────────── */
+#paper {
+  position: fixed;
+  left: 0;
+  top: var(--head);
+  width: 100vw;
+  height: calc(100vh - var(--head));
+  display: block;
+  z-index: 1;
+}
+
+/* ── 칸을 누르면 뜨는 쪽지 ──────────────────────────────────────── */
+.note {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  width: min(320px, calc(100vw - 24px));
+  padding: 14px 16px 12px;
+  background: #fff;
+  border: 1px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(24, 24, 24, 0.13);
+  animation: pop 140ms ease-out;
+}
+
+.note[hidden] { display: none; }
+
+@keyframes pop {
+  from { opacity: 0; transform-origin: top left; }
+  to   { opacity: 1; }
+}
+
+.note-n {
+  margin: 0 0 7px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.note-t {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.011em;
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
 
-/* ── 입력 ──────────────────────────────────────────────────────── */
-.compose {
-  display: grid;
-  grid-template-columns: 3.4em 1fr auto;
-  gap: 0 1.1em;
-  align-items: center;
-  padding-top: 13px;
-  border-top: 1px solid rgba(217, 210, 196, 0.26);
+.note-d {
+  margin: 0;
+  padding-top: 9px;
+  border-top: 1px solid var(--hair);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  font-variant-numeric: tabular-nums;
+  color: var(--pencil);
 }
 
-/* 번호 자리를 비워 피드의 열과 정확히 맞춘다 */
-.compose::before {
-  content: "";
+/* ── 입력 ───────────────────────────────────────────────────────── */
+.compose {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  z-index: 4;
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+
+  width: min(420px, calc(100vw - 40px));
+  padding: 9px 12px 9px 14px;
+  background: #fff;
+  border: 1px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(24, 24, 24, 0.13);
 }
 
 .compose input {
+  min-width: 0;
   border: 0;
   background: transparent;
   outline: 0;
   padding: 2px 0;
   font-family: inherit;
-  font-size: clamp(14px, 1.42vw, 18px);
-  font-weight: 300;
-  letter-spacing: -0.012em;
-  color: var(--paper-hi);
-  caret-color: var(--paper-hi);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.011em;
+  color: var(--ink);
+  caret-color: var(--accent);
 }
 
 .compose input::placeholder {
-  color: rgba(217, 210, 196, 0.34);
+  color: rgba(24, 24, 24, 0.34);
 }
 
 .compose button {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 22px;
+  width: 26px;
+  height: 20px;
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(217, 210, 196, 0.4);
+  color: rgba(24, 24, 24, 0.32);
   cursor: pointer;
-  transition: color 180ms ease, transform 180ms ease;
+  transition: color 160ms ease, transform 160ms ease;
 }
 
 .compose button:hover,
 .compose input:not(:placeholder-shown) ~ button {
-  color: var(--paper-hi);
+  color: var(--accent);
 }
 
 .compose button:hover { transform: translateX(2px); }
 
-.compose button:focus-visible,
-.compose input:focus-visible {
-  outline: 1px solid rgba(217, 210, 196, 0.55);
+.compose input:focus-visible,
+.compose button:focus-visible {
+  outline: 1px solid var(--accent);
   outline-offset: 3px;
 }
 
-/* ── 좁은 화면 ─────────────────────────────────────────────────── */
 @media (max-width: 720px) {
-  .masthead { flex-direction: column; align-items: flex-start; gap: 9px; }
-  .record { height: clamp(200px, 42vh, 320px); }
-  .feed li,
-  .compose { grid-template-columns: 2.6em 1fr auto; }
-  .feed li { grid-template-columns: 2.6em 1fr; }
+  :root { --head: 52px; }
+  .head h1 { font-size: 18px; }
+  .compose { bottom: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feed li { animation-duration: 1ms; }
+  .note { animation-duration: 1ms; }
 }
