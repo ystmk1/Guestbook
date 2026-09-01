@@ -10,3 +10,7 @@ dist
 # 원본 스캔 (29MB) — public/model.glb 로 압축해서 배포한다
 *.glb
 !public/model.glb
+
+# 원본 영상 (40MB) — public/bg.mp4 로 압축해서 배포한다
+*.mp4
+!public/bg.mp4

@@ -159,5 +159,22 @@ formEl.addEventListener('submit', (ev) => {
 
 inputEl.focus();
 
+/* ── 배경 텍스처 ────────────────────────────────────────────────────
+   음소거 자동재생은 대부분 그냥 되지만, 브라우저 정책이나 절전 상태에서
+   막히는 경우가 있다. 실패해도 조용히 넘어가고 첫 조작 때 다시 시도한다.
+   못 틀어도 흰 바탕이라 화면은 멀쩡하다. */
+const bg = document.getElementById('bg') as HTMLVideoElement | null;
+if (bg) {
+  const kick = () => {
+    void bg.play().catch(() => undefined);
+  };
+  kick();
+  document.addEventListener('pointerdown', kick, { once: true });
+  document.addEventListener('keydown', kick, { once: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') kick();
+  });
+}
+
 /* 콘솔에서 백업을 꺼낼 수 있게 (운영용) */
 Object.assign(window as unknown as Record<string, unknown>, { store, paper });

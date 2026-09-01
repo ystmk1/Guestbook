@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 4173",
-    "model": "gltf-transform resize \"$npm_config_src\" /tmp/_r.glb --width 2048 --height 2048 && gltf-transform webp /tmp/_r.glb /tmp/_w.glb --quality 82 && gltf-transform meshopt /tmp/_w.glb public/model.glb"
+    "model": "gltf-transform resize \"$npm_config_src\" /tmp/_r.glb --width 2048 --height 2048 && gltf-transform webp /tmp/_r.glb /tmp/_w.glb --quality 82 && gltf-transform meshopt /tmp/_w.glb public/model.glb",
+    "bg": "node -e \"const{execFileSync}=require('child_process');execFileSync(require('ffmpeg-static'),['-y','-i',process.env.npm_config_src,'-filter_complex','[0:v]scale=1280:720:flags=lanczos,fps=24,split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1:a=0[v]','-map','[v]','-an','-c:v','libx264','-preset','slow','-crf','32','-pix_fmt','yuv420p','-movflags','+faststart','public/bg.mp4'],{stdio:'inherit'})\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@gltf-transform/cli": "^4.5.0",
     "@types/three": "^0.169.0",
+    "ffmpeg-static": "^5.3.0",
     "sharp": "^0.35.4",
     "typescript": "^5.6.0",
     "vite": "^5.4.0"

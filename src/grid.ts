@@ -40,7 +40,6 @@ function noise2(x: number, y: number, seed: number): number {
 
 /* ── 팔레트 ──────────────────────────────────────────────────────── */
 
-const PAPER = '#ffffff';
 const RULE = 'rgba(24, 24, 24, 0.052)';
 const RULE_BOLD = 'rgba(24, 24, 24, 0.085)';
 const CELL_BG = 'rgba(24, 24, 24, 0.030)';
@@ -192,8 +191,8 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
     const b = c.getContext('2d')!;
     b.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    b.fillStyle = PAPER;
-    b.fillRect(0, 0, W, H);
+    // 배경을 칠하지 않는다. 캔버스는 투명하게 두고 뒤에 깔린 영상이
+    // 그대로 비쳐 보이게 한다. 종이색은 body 가 낸다.
 
     // 모눈 — 5칸마다 조금 진하게
     b.lineWidth = 1;

@@ -17,6 +17,12 @@
 </head>
 
 <body>
+  <!-- 맨 뒤에 깔리는 텍스처. 소리 없음, 끊김 없는 무한 루프.
+       정방향+역방향으로 이어붙여 인코딩해서 이음매가 없다. -->
+  <video class="bg" id="bg" src="/bg.mp4"
+         autoplay muted loop playsinline preload="auto"
+         disablepictureinpicture aria-hidden="true" tabindex="-1"></video>
+
   <header class="head">
     <h1>Sympoiesis</h1>
   </header>

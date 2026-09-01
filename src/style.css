@@ -34,6 +34,23 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
+/* ── 배경 텍스처 ────────────────────────────────────────────────────
+   맨 뒤에 전체화면으로 깔린다. multiply 로 합성해서 흰 종이에 옅게
+   인쇄된 것처럼 어두운 부분만 남는다 — 화면이 빛나 보이지 않는다.
+   영상이 없거나 못 틀어도 흰 바탕 그대로라 화면이 깨지지 않는다. */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  opacity: 0.14;
+  filter: grayscale(1) contrast(1.12);
+  mix-blend-mode: multiply;
+}
+
 /* ── 제호 ───────────────────────────────────────────────────────── */
 .head {
   position: fixed;
@@ -43,8 +60,8 @@ html, body {
   height: var(--head);
   display: grid;
   place-items: center;
-  background: #fff;
   z-index: 3;
+  pointer-events: none;
 }
 
 .head h1 {
