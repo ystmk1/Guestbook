@@ -46,20 +46,39 @@ const CELL_BG = 'rgba(24, 24, 24, 0.030)';
 const CELL_EDGE = 'rgba(24, 24, 24, 0.055)';
 const CELL_NUM = 'rgba(24, 24, 24, 0.30)';
 
-/**
- * 채워진 칸 — 여기가 "색깔이 생기는" 지점이다.
- * 한 가지 먹색으로 통일하면 판이 딱딱해져서, 회색 스펙트럼에서
- * 칸마다 하나씩 고른다. 시드가 고정이라 다시 그려도 색이 안 바뀐다.
+/*  채워진 칸 — 여기가 "색깔이 생기는" 지점이다.
  *
- * 숫자 색은 바탕 밝기를 따라 간다. 밝은 회색 위에 흰 숫자를 얹으면
- * 안 보이므로 B0/C9 에서는 먹색으로 뒤집는다.
+ *  회색을 고정해두면 흰 바탕에 묻혀 잘 안 보인다. 그래서 스펙트럼
+ *  양 끝(#696969 ↔ #C9C9C9)을 천천히 오간다.
+ *
+ *  칸마다 위상을 다르게 준다. 전부 같은 위상이면 판 전체가 한꺼번에
+ *  맥동해서 전시장에서 거슬린다. 흩어놓으면 느린 일렁임이 되어
+ *  시선만 붙잡는다.
+ *
+ *  숫자는 색을 뒤집지 않고 먹색으로 고정하되 진하기만 따라간다.
+ *  흰색 ↔ 먹색으로 뒤집으면 그 중간에서 바탕과 같은 회색이 되어
+ *  글자가 한 번씩 사라진다.
  */
-const FILL_TONES: { bg: string; fg: string }[] = [
-  { bg: '#696969', fg: 'rgba(255, 255, 255, 0.88)' },
-  { bg: '#8f8f8f', fg: 'rgba(255, 255, 255, 0.90)' },
-  { bg: '#b0b0b0', fg: 'rgba(24, 24, 24, 0.60)' },
-  { bg: '#c9c9c9', fg: 'rgba(24, 24, 24, 0.56)' },
-];
+const TONE_MIN = 0x69;
+const TONE_MAX = 0xc9;
+
+/** 한 번 숨쉬는 데 걸리는 시간 (초) */
+const BREATH = 6.5;
+
+/*  매 프레임 칸마다 색 문자열을 만들면 쓰레기가 쌓인다.
+    64단계로 미리 만들어두고 골라 쓴다. */
+const STEPS = 64;
+const TONE_BG: string[] = [];
+const TONE_FG: string[] = [];
+for (let i = 0; i < STEPS; i++) {
+  const k = i / (STEPS - 1);
+  const g = Math.round(TONE_MIN + (TONE_MAX - TONE_MIN) * k);
+  TONE_BG.push(`rgb(${g},${g},${g})`);
+  // 바탕이 밝아질수록 숫자를 진하게
+  TONE_FG.push(`rgba(20,20,20,${(0.5 + 0.4 * k).toFixed(3)})`);
+}
+
+const TWO_PI_OVER_BREATH = (Math.PI * 2) / BREATH;
 
 /** 목표 한 칸 크기 (px) */
 const CELL_TARGET = 24;
@@ -171,8 +190,8 @@ export interface Paper {
   capacity: number;
   /** 화면 좌표 → cells 인덱스 (없으면 -1) */
   hit(px: number, py: number): number;
-  /** 채워진 개수와 방금 찬 칸의 진행도로 다시 그린다 */
-  draw(filled: number, growT: number): void;
+  /** 채워진 개수 · 방금 찬 칸의 진행도 · 경과 시간(초)으로 다시 그린다 */
+  draw(filled: number, growT: number, time: number): void;
   resize(w: number, h: number): void;
   /** 셀의 화면 사각형 */
   rectOf(i: number): { x: number; y: number; w: number; h: number };
@@ -255,7 +274,7 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
   }
 
   /* ── 합성 ─────────────────────────────────────────────────────── */
-  function draw(filled: number, growT: number): void {
+  function draw(filled: number, growT: number, time: number): void {
     if (!base) return;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -278,13 +297,16 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
       const a = i === n - 1 ? growT : 1;
       if (a <= 0) continue;
 
-      const tone = FILL_TONES[hash(q.x, q.y, 401) * FILL_TONES.length | 0];
+      // 칸마다 다른 위상으로 스펙트럼을 오간다
+      const phase = hash(q.x, q.y, 401) * Math.PI * 2;
+      const k = 0.5 + 0.5 * Math.sin(time * TWO_PI_OVER_BREATH + phase);
+      const step = (k * (STEPS - 1)) | 0;
 
       ctx.globalAlpha = a;
-      ctx.fillStyle = tone.bg;
+      ctx.fillStyle = TONE_BG[step];
       ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
 
-      ctx.fillStyle = tone.fg;
+      ctx.fillStyle = TONE_FG[step];
       ctx.fillText(String(q.d), x + cell / 2, y + cell / 2);
     }
     ctx.globalAlpha = 1;

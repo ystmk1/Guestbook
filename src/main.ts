@@ -31,11 +31,25 @@ let hover = -1;
 
 /** 방금 찬 칸이 스며드는 진행도 */
 let growT = 1;
-let growRaf = 0;
+let growAt = 0;
 
-function paint(): void {
-  paper.draw(entries.length, growT);
+/*  칸이 숨쉬는 동안은 계속 다시 그려야 한다.
+    다만 60fps 까지 갈 이유가 없다 — 6.5초에 한 번 오가는 느린 변화라
+    30fps 로 충분하고, 하루 종일 켜두는 화면이라 그만큼 덜 먹는다.
+    탭이 가려지면 rAF 자체가 멈추므로 따로 처리할 게 없다. */
+const FRAME_MS = 1000 / 30;
+let lastPaint = 0;
+
+function frame(now: number): void {
+  requestAnimationFrame(frame);
+  if (now - lastPaint < FRAME_MS) return;
+  lastPaint = now;
+
+  if (growT < 1) growT = Math.min(1, (now - growAt) / 500);
+  paper.draw(entries.length, growT, now / 1000);
 }
+
+requestAnimationFrame(frame);
 
 /* ── 크기 ───────────────────────────────────────────────────────── */
 function fit(): void {
@@ -44,7 +58,6 @@ function fit(): void {
   if (!w || !h) return;
   paper.resize(w, h);
   closeNote();
-  paint();
 }
 
 new ResizeObserver(fit).observe(canvas);
@@ -55,21 +68,12 @@ store.subscribe((next) => {
   const grew = next.length > entries.length;
   entries = next;
 
-  if (!grew) {
-    paint();
-    return;
+  // 마지막 칸을 500ms 에 걸쳐 스며들게 한다.
+  // 실제로 그리는 건 위의 상시 루프가 맡는다.
+  if (grew) {
+    growT = 0;
+    growAt = performance.now();
   }
-
-  // 마지막 칸을 500ms 에 걸쳐 스며들게 한다
-  cancelAnimationFrame(growRaf);
-  const t0 = performance.now();
-  growT = 0;
-  const step = (now: number) => {
-    growT = Math.min(1, (now - t0) / 500);
-    paint();
-    if (growT < 1) growRaf = requestAnimationFrame(step);
-  };
-  growRaf = requestAnimationFrame(step);
 });
 
 /* ── 쪽지 ───────────────────────────────────────────────────────── */

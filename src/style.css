@@ -220,9 +220,16 @@ html, body {
 
 .compose button:hover { transform: translateX(2px); }
 
-.compose input:focus-visible,
+/*  텍스트 입력은 사양상 항상 :focus-visible 에 걸린다. 게다가 이 화면은
+    열자마자 입력창에 포커스를 주므로 아웃라인이 계속 떠 있게 된다.
+    입력창은 카드 테두리와 커서만으로 충분히 드러나므로 아웃라인을 뺀다. */
+.compose input:focus-visible {
+  outline: none;
+}
+
+/* 버튼은 키보드로 옮겨 다닐 때 어디 있는지 보여야 한다 (빨강 아님) */
 .compose button:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--pencil);
   outline-offset: 3px;
 }
 
