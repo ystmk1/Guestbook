@@ -6,14 +6,17 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --port 4173"
+    "preview": "vite preview --port 4173",
+    "model": "gltf-transform resize \"$npm_config_src\" /tmp/_r.glb --width 2048 --height 2048 && gltf-transform webp /tmp/_r.glb /tmp/_w.glb --quality 82 && gltf-transform meshopt /tmp/_w.glb public/model.glb"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "three": "^0.169.0"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.5.0",
     "@types/three": "^0.169.0",
+    "sharp": "^0.35.4",
     "typescript": "^5.6.0",
     "vite": "^5.4.0"
   }

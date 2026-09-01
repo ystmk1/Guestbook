@@ -6,3 +6,7 @@ dist
 .DS_Store
 *.log
 .vercel
+
+# 원본 스캔 (29MB) — public/model.glb 로 압축해서 배포한다
+*.glb
+!public/model.glb
