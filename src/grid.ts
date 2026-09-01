@@ -46,10 +46,20 @@ const CELL_BG = 'rgba(24, 24, 24, 0.030)';
 const CELL_EDGE = 'rgba(24, 24, 24, 0.055)';
 const CELL_NUM = 'rgba(24, 24, 24, 0.30)';
 
-/** 채워진 칸 — 여기가 "색깔이 생기는" 지점이다 */
-const FILL = '#171717';
-const FILL_NUM = 'rgba(255, 255, 255, 0.82)';
-const HOVER = '#c8452f';
+/**
+ * 채워진 칸 — 여기가 "색깔이 생기는" 지점이다.
+ * 한 가지 먹색으로 통일하면 판이 딱딱해져서, 회색 스펙트럼에서
+ * 칸마다 하나씩 고른다. 시드가 고정이라 다시 그려도 색이 안 바뀐다.
+ *
+ * 숫자 색은 바탕 밝기를 따라 간다. 밝은 회색 위에 흰 숫자를 얹으면
+ * 안 보이므로 B0/C9 에서는 먹색으로 뒤집는다.
+ */
+const FILL_TONES: { bg: string; fg: string }[] = [
+  { bg: '#696969', fg: 'rgba(255, 255, 255, 0.88)' },
+  { bg: '#8f8f8f', fg: 'rgba(255, 255, 255, 0.90)' },
+  { bg: '#b0b0b0', fg: 'rgba(24, 24, 24, 0.60)' },
+  { bg: '#c9c9c9', fg: 'rgba(24, 24, 24, 0.56)' },
+];
 
 /** 목표 한 칸 크기 (px) */
 const CELL_TARGET = 24;
@@ -161,8 +171,8 @@ export interface Paper {
   capacity: number;
   /** 화면 좌표 → cells 인덱스 (없으면 -1) */
   hit(px: number, py: number): number;
-  /** 채워진 개수 · 호버 · 방금 찬 칸의 진행도로 다시 그린다 */
-  draw(filled: number, hover: number, growT: number): void;
+  /** 채워진 개수와 방금 찬 칸의 진행도로 다시 그린다 */
+  draw(filled: number, growT: number): void;
   resize(w: number, h: number): void;
   /** 셀의 화면 사각형 */
   rectOf(i: number): { x: number; y: number; w: number; h: number };
@@ -237,24 +247,15 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
       b.strokeStyle = CELL_EDGE;
       b.strokeRect(x + 1.5, y + 1.5, cell - 3, cell - 3);
 
-      // 손으로 적은 것처럼 — 칸마다 결정론적으로 조금씩 흔들어 놓는다
-      const jx = (hash(q.x, q.y, 5) - 0.5) * cell * 0.16;
-      const jy = (hash(q.x, q.y, 9) - 0.5) * cell * 0.14;
-      const rot = (hash(q.x, q.y, 13) - 0.5) * 0.17;
-
-      b.save();
-      b.translate(x + cell / 2 + jx, y + cell / 2 + jy);
-      b.rotate(rot);
       b.fillStyle = CELL_NUM;
-      b.fillText(String(q.d), 0, 0);
-      b.restore();
+      b.fillText(String(q.d), x + cell / 2, y + cell / 2);
     }
 
     base = c;
   }
 
   /* ── 합성 ─────────────────────────────────────────────────────── */
-  function draw(filled: number, hover: number, growT: number): void {
+  function draw(filled: number, growT: number): void {
     if (!base) return;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -277,29 +278,16 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
       const a = i === n - 1 ? growT : 1;
       if (a <= 0) continue;
 
+      const tone = FILL_TONES[hash(q.x, q.y, 401) * FILL_TONES.length | 0];
+
       ctx.globalAlpha = a;
-      ctx.fillStyle = FILL;
+      ctx.fillStyle = tone.bg;
       ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
 
-      const jx = (hash(q.x, q.y, 5) - 0.5) * cell * 0.16;
-      const jy = (hash(q.x, q.y, 9) - 0.5) * cell * 0.14;
-      const rot = (hash(q.x, q.y, 13) - 0.5) * 0.17;
-
-      ctx.save();
-      ctx.translate(x + cell / 2 + jx, y + cell / 2 + jy);
-      ctx.rotate(rot);
-      ctx.fillStyle = FILL_NUM;
-      ctx.fillText(String(q.d), 0, 0);
-      ctx.restore();
+      ctx.fillStyle = tone.fg;
+      ctx.fillText(String(q.d), x + cell / 2, y + cell / 2);
     }
     ctx.globalAlpha = 1;
-
-    if (hover >= 0 && hover < n) {
-      const q = cells[hover];
-      ctx.strokeStyle = HOVER;
-      ctx.lineWidth = 1.6;
-      ctx.strokeRect(q.x * cell + 0.8, q.y * cell + 0.8, cell - 1.6, cell - 1.6);
-    }
   }
 
   /* ── 크기 ─────────────────────────────────────────────────────── */

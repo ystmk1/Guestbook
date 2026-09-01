@@ -34,7 +34,7 @@ let growT = 1;
 let growRaf = 0;
 
 function paint(): void {
-  paper.draw(entries.length, hover, growT);
+  paper.draw(entries.length, growT);
 }
 
 /* ── 크기 ───────────────────────────────────────────────────────── */
@@ -121,10 +121,10 @@ canvas.addEventListener('pointermove', (ev) => {
   hover = next;
   canvas.style.cursor = next >= 0 ? 'pointer' : 'default';
 
+  // 캔버스에 그려지는 호버 표시가 없으므로 다시 그리지 않는다.
+  // 바뀌는 건 커서 모양과 쪽지뿐이다.
   if (next >= 0) openNote(next);
   else closeNote();
-
-  paint();
 });
 
 canvas.addEventListener('pointerleave', () => {
@@ -132,7 +132,6 @@ canvas.addEventListener('pointerleave', () => {
   hover = -1;
   canvas.style.cursor = 'default';
   closeNote();
-  paint();
 });
 
 // 판면 아무 데나 누르면 바로 타이핑할 수 있게
@@ -153,8 +152,12 @@ formEl.addEventListener('submit', (ev) => {
   if (!inputEl.value.trim()) return;
   if (entries.length >= paper.capacity) return;
 
-  // 이름은 지우지 않는다 — 한 사람이 여러 줄 남길 때 다시 치지 않게
-  if (store.add(inputEl.value, whoEl.value)) inputEl.value = '';
+  if (store.add(inputEl.value, whoEl.value)) {
+    // 이름까지 비운다. 전시장에서는 다음 차례가 다른 사람이라
+    // 이름이 남아 있으면 앞사람 이름으로 글이 올라간다.
+    inputEl.value = '';
+    whoEl.value = '';
+  }
   closeNote();
   inputEl.focus();
 });
