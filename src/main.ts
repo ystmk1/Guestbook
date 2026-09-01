@@ -18,15 +18,16 @@ const noteEl = $<HTMLElement>('note');
 const noteN = $<HTMLElement>('note-n');
 const noteT = $<HTMLElement>('note-t');
 const noteD = $<HTMLElement>('note-d');
+const noteWho = $<HTMLElement>('note-who');
 const formEl = $<HTMLFormElement>('compose');
 const inputEl = $<HTMLInputElement>('entry');
+const whoEl = $<HTMLInputElement>('who');
 
 const paper = createPaper(canvas);
 const store = new Store();
 
 let entries: Entry[] = [];
 let hover = -1;
-let selected = -1;
 
 /** 방금 찬 칸이 스며드는 진행도 */
 let growT = 1;
@@ -76,9 +77,9 @@ function openNote(i: number): void {
   const entry = entries[i];
   if (!entry) return;
 
-  selected = i;
   noteN.textContent = String(i + 1).padStart(3, '0');
   noteT.textContent = entry.body;
+  noteWho.textContent = entry.name ?? '';
 
   const d = new Date(entry.createdAt);
   const p = (v: number) => String(v).padStart(2, '0');
@@ -105,7 +106,6 @@ function openNote(i: number): void {
 }
 
 function closeNote(): void {
-  selected = -1;
   noteEl.hidden = true;
 }
 
@@ -113,11 +113,17 @@ function closeNote(): void {
 canvas.addEventListener('pointermove', (ev) => {
   const r = canvas.getBoundingClientRect();
   const i = paper.hit(ev.clientX - r.left, ev.clientY - r.top);
+
   // 아직 안 채워진 칸은 집히지 않는다
   const next = i >= 0 && i < entries.length ? i : -1;
   if (next === hover) return;
+
   hover = next;
   canvas.style.cursor = next >= 0 ? 'pointer' : 'default';
+
+  if (next >= 0) openNote(next);
+  else closeNote();
+
   paint();
 });
 
@@ -125,19 +131,13 @@ canvas.addEventListener('pointerleave', () => {
   if (hover === -1) return;
   hover = -1;
   canvas.style.cursor = 'default';
+  closeNote();
   paint();
 });
 
-canvas.addEventListener('click', (ev) => {
-  const r = canvas.getBoundingClientRect();
-  const i = paper.hit(ev.clientX - r.left, ev.clientY - r.top);
-  if (i >= 0 && i < entries.length) {
-    if (i === selected) closeNote();
-    else openNote(i);
-  } else {
-    closeNote();
-    inputEl.focus();
-  }
+// 판면 아무 데나 누르면 바로 타이핑할 수 있게
+canvas.addEventListener('click', () => {
+  inputEl.focus();
 });
 
 window.addEventListener('keydown', (ev) => {
@@ -146,13 +146,15 @@ window.addEventListener('keydown', (ev) => {
 
 /* ── 입력 ───────────────────────────────────────────────────────── */
 inputEl.maxLength = LIMITS.bodyMax;
+whoEl.maxLength = LIMITS.nameMax;
 
 formEl.addEventListener('submit', (ev) => {
   ev.preventDefault();
   if (!inputEl.value.trim()) return;
   if (entries.length >= paper.capacity) return;
 
-  if (store.add(inputEl.value)) inputEl.value = '';
+  // 이름은 지우지 않는다 — 한 사람이 여러 줄 남길 때 다시 치지 않게
+  if (store.add(inputEl.value, whoEl.value)) inputEl.value = '';
   closeNote();
   inputEl.focus();
 });

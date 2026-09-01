@@ -14,3 +14,7 @@ dist
 # 원본 영상 (40MB) — public/bg.mp4 로 압축해서 배포한다
 *.mp4
 !public/bg.mp4
+
+# 원본 폰트 (상용) — public/fonts/ 의 서브셋만 배포한다
+*.otf
+*.ttf

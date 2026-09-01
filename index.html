@@ -7,13 +7,9 @@
   <meta name="color-scheme" content="light" />
   <meta name="theme-color" content="#ffffff" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Architects+Daughter&display=swap" />
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
+  <!-- 폰트는 전부 자체 호스팅한다. 외부 CDN 요청이 없다. -->
+  <link rel="preload" href="/fonts/sm3-latin.woff2" as="font"
+        type="font/woff2" crossorigin />
 </head>
 
 <body>
@@ -34,10 +30,12 @@
   <div class="note" id="note" hidden>
     <p class="note-n" id="note-n"></p>
     <p class="note-t" id="note-t"></p>
-    <p class="note-d" id="note-d"></p>
+    <p class="note-d"><span id="note-who"></span><span id="note-d"></span></p>
   </div>
 
   <form class="compose" id="compose" autocomplete="off">
+    <input id="who" type="text" maxlength="12" spellcheck="false"
+           placeholder="이름" aria-label="이름 (선택)" />
     <input id="entry" type="text" maxlength="80" spellcheck="false"
            placeholder="한 줄 남기기" aria-label="한 줄 남기기" />
     <button type="submit" aria-label="남기기">

@@ -64,9 +64,11 @@ export class Store {
   }
 
   /** 한 줄 추가. 실제로 화면에 올라갔으면 true. */
-  add(body: string): boolean {
+  add(body: string, name?: string | null): boolean {
     const text = body.trim().replace(/\s+/g, ' ');
     if (!text) return false;
+
+    const who = (name ?? '').trim().replace(/\s+/g, ' ') || null;
 
     // 도배 차단
     if (Date.now() - this.lastAt < 1500) return false;
@@ -75,10 +77,11 @@ export class Store {
     const entry: Entry = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       body: text,
+      name: who,
       createdAt: Date.now(),
     };
 
-    if (screen(text, null)) {
+    if (screen(text, who)) {
       this.quarantine.push(entry);
       write(KEY_QUARANTINE, this.quarantine.slice(-500));
       return true; // 막혔다는 반응을 주지 않는다

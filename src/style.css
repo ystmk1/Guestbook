@@ -3,6 +3,8 @@
    모눈 종이 한 장. 제호와 입력줄 말고는 아무것도 얹지 않는다.
    ===================================================================== */
 
+@import "./font.css";
+
 :root {
   --head: 62px;
   --ink: #171717;
@@ -10,8 +12,12 @@
   --hair: rgba(24, 24, 24, 0.12);
   --accent: #c8452f;
 
-  --sans: "Inter", "Pretendard Variable", Pretendard, -apple-system,
-          "Helvetica Neue", Arial, sans-serif;
+  /* SM3신중고딕-03.
+     이 폰트는 한글 2,350자(KS X 1001)만 실제로 그린다. 그 밖의 음절은
+     @font-face 의 unicode-range 에서 빠져 있어 뒤의 시스템 한글 폰트로
+     넘어간다 — 글자가 사라지지 않게 하려는 장치다. */
+  --sans: "SM3SJGothic", "Malgun Gothic", "맑은 고딕",
+          "Apple SD Gothic Neo", sans-serif;
 
   color-scheme: light;
 }
@@ -94,6 +100,10 @@ html, body {
   border: 1px solid var(--ink);
   box-shadow: 3px 3px 0 rgba(24, 24, 24, 0.13);
   animation: pop 140ms ease-out;
+  /* 호버로 뜨는 창이라 커서를 가로채면 안 된다.
+     가로채면 쪽지 위에 커서가 올라간 순간 칸에서 벗어난 것이 되어
+     쪽지가 닫히고, 다시 뜨고, 깜빡인다. */
+  pointer-events: none;
 }
 
 .note[hidden] { display: none; }
@@ -126,11 +136,24 @@ html, body {
   margin: 0;
   padding-top: 9px;
   border-top: 1px solid var(--hair);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 10px;
   letter-spacing: 0.13em;
   font-variant-numeric: tabular-nums;
   color: var(--pencil);
 }
+
+/* 이름은 안 써도 된다 — 비면 자리만 차지하지 않게 */
+#note-who {
+  letter-spacing: 0;
+  font-size: 11px;
+  color: var(--ink);
+}
+
+#note-who:empty { display: none; }
 
 /* ── 입력 ───────────────────────────────────────────────────────── */
 .compose {
@@ -141,11 +164,11 @@ html, body {
   z-index: 4;
 
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
 
-  width: min(420px, calc(100vw - 40px));
+  width: min(480px, calc(100vw - 40px));
   padding: 9px 12px 9px 14px;
   background: #fff;
   border: 1px solid var(--ink);
@@ -168,6 +191,13 @@ html, body {
 
 .compose input::placeholder {
   color: rgba(24, 24, 24, 0.34);
+}
+
+/* 이름은 선택이라 좁게, 본문과 세로선으로만 나눈다 */
+#who {
+  width: 5.2em;
+  padding-right: 10px;
+  border-right: 1px solid var(--hair);
 }
 
 .compose button {

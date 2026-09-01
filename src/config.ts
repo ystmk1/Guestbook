@@ -2,11 +2,14 @@
 export interface Entry {
   id: string;
   body: string;
+  /** 안 쓰면 null */
+  name: string | null;
   createdAt: number;
 }
 
 export const LIMITS = {
   bodyMax: 80,
+  nameMax: 12,
 } as const;
 
 /** 보관 상한 — localStorage 가 원본이므로 넉넉히 잡는다 */

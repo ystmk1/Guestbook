@@ -99,7 +99,7 @@ function step(a: number, b: number, v: number): number {
 /**
  * 격자 위에 실제로 남을 칸들을 만든다.
  * 캔버스와 무관한 순수 함수라 따로 검증할 수 있다.
- * 반환 순서가 곧 채워지는 순서 — 위에서 아래로, 각 줄은 왼쪽부터.
+ * 반환 순서가 곧 채워지는 순서 — 화면 전체에 흩어지도록 섞어서 낸다.
  */
 export function buildCells(cols: number, rows: number): Cell[] {
   const out: Cell[] = [];
@@ -132,7 +132,6 @@ export function buildCells(cols: number, rows: number): Cell[] {
       }
     }
 
-    // 한 줄 안에서는 왼쪽부터 채운다
     row.sort((a, b) => a.x - b.x);
     for (const c of row) {
       const key = c.y * cols + c.x;
@@ -140,6 +139,17 @@ export function buildCells(cols: number, rows: number): Cell[] {
       seen.add(key);
       out.push(c);
     }
+  }
+
+  // 채워지는 순서를 흩어놓는다.
+  // 읽는 순서대로 채우면 위에서부터 줄이 차오르는 그림이 되는데,
+  // 화면 전체에 무작위로 번지는 편이 낫다. 시드가 고정이라 같은 화면
+  // 크기면 몇 번을 새로 고쳐도 n번째 글은 늘 같은 칸에 앉는다.
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(hash(i, 0, 907) * (i + 1));
+    const t = out[i];
+    out[i] = out[j];
+    out[j] = t;
   }
 
   return out;
@@ -214,7 +224,7 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
     }
 
     const fs = Math.max(8, cell * 0.42);
-    b.font = fs + 'px "Architects Daughter", "Pretendard Variable", cursive';
+    b.font = fs + 'px "SM3SJGothic", "Malgun Gothic", sans-serif';
     b.textAlign = 'center';
     b.textBaseline = 'middle';
 
@@ -253,7 +263,7 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const fs = Math.max(8, cell * 0.42);
-    ctx.font = fs + 'px "Architects Daughter", "Pretendard Variable", cursive';
+    ctx.font = fs + 'px "SM3SJGothic", "Malgun Gothic", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
