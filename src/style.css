@@ -6,7 +6,12 @@
 @import "./font.css";
 
 :root {
-  --head: 62px;
+  /*  브라우저 확대 배율. main.ts 가 재서 넣는다.
+      확대는 CSS 픽셀 전체를 키우므로, 크기를 고정하고 싶은 것은
+      전부 이 값으로 나눠준다. 모눈은 나누지 않아 그대로 커진다. */
+  --zoom: 1;
+
+  --head: calc(62px / var(--zoom));
   --ink: #171717;
   --pencil: rgba(24, 24, 24, 0.42);
   --hair: rgba(24, 24, 24, 0.12);
@@ -78,7 +83,7 @@ html, body {
 
 .head h1 {
   margin: 0;
-  font-size: 21px;
+  font-size: calc(21px / var(--zoom));
   font-weight: 400;
   letter-spacing: -0.012em;
 }
@@ -162,11 +167,15 @@ html, body {
 #note-who:empty { display: none; }
 
 /* ── 입력 ───────────────────────────────────────────────────────── */
+/*  입력줄은 안쪽 치수를 하나하나 나누는 대신 통째로 되돌린다.
+    바닥 기준으로 축소하므로 화면 아래에서 뜨는 거리도 그대로다.
+    폭의 화면 클램프에는 반대로 배율을 곱해야 물리적으로 같은 폭이 된다. */
 .compose {
   position: fixed;
   left: 50%;
-  bottom: 26px;
-  transform: translateX(-50%);
+  bottom: calc(26px / var(--zoom));
+  transform: translateX(-50%) scale(calc(1 / var(--zoom)));
+  transform-origin: bottom center;
   z-index: 4;
 
   display: grid;
@@ -174,7 +183,7 @@ html, body {
   align-items: center;
   gap: 10px;
 
-  width: min(480px, calc(100vw - 40px));
+  width: min(480px, calc((100vw - 40px) * var(--zoom)));
   padding: 9px 12px 9px 14px;
   background: #fff;
   border: 1px solid var(--ink);
@@ -242,8 +251,9 @@ html, body {
 .banner {
   position: fixed;
   left: 50%;
-  top: 18px;
-  transform: translateX(-50%);
+  top: calc(18px / var(--zoom));
+  transform: translateX(-50%) scale(calc(1 / var(--zoom)));
+  transform-origin: top center;
   z-index: 20;
   margin: 0;
   padding: 8px 16px;
@@ -257,9 +267,9 @@ html, body {
 }
 
 @media (max-width: 720px) {
-  :root { --head: 52px; }
-  .head h1 { font-size: 18px; }
-  .compose { bottom: 16px; }
+  :root { --head: calc(52px / var(--zoom)); }
+  .head h1 { font-size: calc(18px / var(--zoom)); }
+  .compose { bottom: calc(16px / var(--zoom)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

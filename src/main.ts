@@ -4,6 +4,7 @@ import { LIMITS, type Entry } from './config';
 import { Store } from './store';
 import { createPaper } from './grid';
 import { exportLog } from './export';
+import { blockAccidentalZoom, trackZoom } from './zoom';
 
 /* =====================================================================
    Sympoiesis · Guestbook
@@ -23,6 +24,11 @@ const noteWho = $<HTMLElement>('note-who');
 const formEl = $<HTMLFormElement>('compose');
 const inputEl = $<HTMLInputElement>('entry');
 const whoEl = $<HTMLInputElement>('who');
+
+/*  확대 대응은 판면을 만들기 전에 걸어둔다.
+    --zoom 이 정해져야 --head 가 결정되고, 그래야 캔버스 높이가 맞다. */
+trackZoom();
+blockAccidentalZoom();
 
 const paper = createPaper(canvas);
 const store = new Store();
