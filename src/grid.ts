@@ -190,8 +190,16 @@ export interface Paper {
   capacity: number;
   /** 화면 좌표 → cells 인덱스 (없으면 -1) */
   hit(px: number, py: number): number;
-  /** 채워진 개수 · 방금 찬 칸의 진행도 · 경과 시간(초)으로 다시 그린다 */
-  draw(filled: number, growT: number, time: number): void;
+  /**
+   * 채워진 칸 번호들을 그린다.
+   * growSlot 은 방금 채워져 스며드는 중인 칸.
+   */
+  draw(
+    occupied: ReadonlySet<number>,
+    growSlot: number,
+    growT: number,
+    time: number,
+  ): void;
   resize(w: number, h: number): void;
   /** 셀의 화면 사각형 */
   rectOf(i: number): { x: number; y: number; w: number; h: number };
@@ -274,7 +282,12 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
   }
 
   /* ── 합성 ─────────────────────────────────────────────────────── */
-  function draw(filled: number, growT: number, time: number): void {
+  function draw(
+    occupied: ReadonlySet<number>,
+    growSlot: number,
+    growT: number,
+    time: number,
+  ): void {
     if (!base) return;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -287,14 +300,14 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const n = Math.min(filled, cells.length);
-    for (let i = 0; i < n; i++) {
+    for (const i of occupied) {
       const q = cells[i];
+      if (!q) continue;
       const x = q.x * cell;
       const y = q.y * cell;
 
-      // 마지막 칸은 스며들 듯 나타난다
-      const a = i === n - 1 ? growT : 1;
+      // 방금 채워진 칸은 스며들 듯 나타난다
+      const a = i === growSlot ? growT : 1;
       if (a <= 0) continue;
 
       // 칸마다 다른 위상으로 스펙트럼을 오간다

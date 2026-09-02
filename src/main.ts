@@ -8,10 +8,11 @@ import { blockAccidentalZoom, trackZoom } from './zoom';
 import { startTicker } from './ticker';
 
 /* =====================================================================
-   Sympoiesis · Guestbook
+   Sympoiesis · 방명록
 
-   방명록 한 줄이 모눈 한 칸을 위에서부터 차례로 채운다.
-   채워진 칸을 누르면 그 줄이 나온다.
+   방명록 한 줄이 모눈 한 칸을 차지한다. 어느 칸인지는 기록이 직접
+   들고 있다(slot) — 순서가 아니라 번호라서, 가운데 하나를 지워도
+   나머지가 자리를 옮기지 않는다.
    ===================================================================== */
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -25,6 +26,10 @@ const noteWho = $<HTMLElement>('note-who');
 const formEl = $<HTMLFormElement>('compose');
 const inputEl = $<HTMLInputElement>('entry');
 const whoEl = $<HTMLInputElement>('who');
+const confirmEl = $<HTMLElement>('confirm');
+const confirmBody = $<HTMLElement>('confirm-body');
+const confirmOk = $<HTMLButtonElement>('confirm-ok');
+const confirmCancel = $<HTMLButtonElement>('confirm-cancel');
 
 /*  확대 대응은 판면을 만들기 전에 걸어둔다.
     --zoom 이 정해져야 --head 가 결정되고, 그래야 캔버스 높이가 맞다. */
@@ -33,23 +38,68 @@ blockAccidentalZoom();
 
 startTicker(
   $<HTMLElement>('ticker-track'),
-  '양손으로 두 식물의 잎을 줄기에 가깝게 잡고 기다려주세요',
+  '양쪽 식물의 잎을 각각 줄기에 가깝게 잡고 기다려주세요',
 );
 
 const paper = createPaper(canvas);
 const store = new Store();
 
 let entries: Entry[] = [];
-let hover = -1;
 
-/** 방금 찬 칸이 스며드는 진행도 */
+/** 칸 번호 → 기록 */
+const bySlot = new Map<number, Entry>();
+/** 기록 id → 앉은 칸 번호 */
+const slotOf = new Map<string, number>();
+/** 기록 id → 화면에 보이는 번호 */
+const numberOf = new Map<string, number>();
+
+let occupied: ReadonlySet<number> = new Set();
+
+let hoverSlot = -1;
+
+/** 방금 채워져 스며드는 중인 칸 */
+let growSlot = -1;
 let growT = 1;
 let growAt = 0;
 
-/*  칸이 숨쉬는 동안은 계속 다시 그려야 한다.
-    다만 60fps 까지 갈 이유가 없다 — 6.5초에 한 번 오가는 느린 변화라
-    30fps 로 충분하고, 하루 종일 켜두는 화면이라 그만큼 덜 먹는다.
-    탭이 가려지면 rAF 자체가 멈추므로 따로 처리할 게 없다. */
+/**
+ * 기록을 실제 칸에 앉힌다.
+ *
+ * 두 번에 나눠 도는 이유 — 먼저 제 번호가 멀쩡한 것들을 앉히고,
+ * 남은 것(번호가 없거나 겹치거나 화면 밖)만 빈자리에 넣는다.
+ * 한 번에 돌면 앞엣것이 뒤엣것의 번호를 먼저 차지해버린다.
+ */
+function remap(): void {
+  bySlot.clear();
+  slotOf.clear();
+  numberOf.clear();
+
+  const cap = paper.capacity;
+  const rest: Entry[] = [];
+
+  entries.forEach((e, i) => {
+    numberOf.set(e.id, i + 1);
+    const s = e.slot;
+    if (Number.isInteger(s) && s >= 0 && s < cap && !bySlot.has(s)) bySlot.set(s, e);
+    else rest.push(e);
+  });
+
+  // 판이 다 찼거나 화면이 작아져 번호가 범위를 벗어난 경우 빈자리로 되돌려 쓴다
+  let scan = 0;
+  for (const e of rest) {
+    while (scan < cap && bySlot.has(scan)) scan++;
+    if (scan >= cap) break;
+    bySlot.set(scan, e);
+  }
+
+  for (const [slot, e] of bySlot) slotOf.set(e.id, slot);
+  occupied = new Set(bySlot.keys());
+}
+
+/* ── 그리기 ─────────────────────────────────────────────────────
+   칸이 숨쉬므로 루프는 상시 돌지만 30fps 로 제한한다. 6.5초에 한 번
+   오가는 느린 변화라 그 이상은 의미가 없고, 하루 종일 켜두는 화면이라
+   그만큼 덜 먹는다. 탭이 가려지면 rAF 자체가 멈춘다. */
 const FRAME_MS = 1000 / 30;
 let lastPaint = 0;
 
@@ -59,7 +109,7 @@ function frame(now: number): void {
   lastPaint = now;
 
   if (growT < 1) growT = Math.min(1, (now - growAt) / 500);
-  paper.draw(entries.length, growT, now / 1000);
+  paper.draw(occupied, growSlot, growT, now / 1000);
 }
 
 requestAnimationFrame(frame);
@@ -70,6 +120,7 @@ function fit(): void {
   const h = canvas.clientHeight;
   if (!w || !h) return;
   paper.resize(w, h);
+  remap();
   closeNote();
 }
 
@@ -78,23 +129,24 @@ fit();
 
 /* ── 기록 ───────────────────────────────────────────────────────── */
 store.subscribe((next) => {
-  const grew = next.length > entries.length;
+  const newest = next.length > entries.length ? next[next.length - 1] : null;
   entries = next;
+  remap();
 
-  // 마지막 칸을 500ms 에 걸쳐 스며들게 한다.
-  // 실제로 그리는 건 위의 상시 루프가 맡는다.
-  if (grew) {
+  if (newest) {
+    // 새로 앉은 칸을 500ms 에 걸쳐 스며들게 한다
+    growSlot = slotOf.get(newest.id) ?? -1;
     growT = 0;
     growAt = performance.now();
   }
 });
 
 /* ── 쪽지 ───────────────────────────────────────────────────────── */
-function openNote(i: number): void {
-  const entry = entries[i];
+function openNote(slot: number): void {
+  const entry = bySlot.get(slot);
   if (!entry) return;
 
-  noteN.textContent = String(i + 1).padStart(3, '0');
+  noteN.textContent = String(numberOf.get(entry.id) ?? 0).padStart(3, '0');
   noteT.textContent = entry.body;
   noteWho.textContent = entry.name ?? '';
 
@@ -108,7 +160,7 @@ function openNote(i: number): void {
   // 글자수 제한이 없어서 줄 수에 따라 높이가 매번 달라진다.
   noteEl.hidden = false;
 
-  const r = paper.rectOf(i);
+  const r = paper.rectOf(slot);
   const top = canvas.getBoundingClientRect().top;
   const w = noteEl.offsetWidth;
   const h = noteEl.offsetHeight;
@@ -134,8 +186,7 @@ function openNote(i: number): void {
   if (x < EDGE) x = Math.min(Math.max(EDGE, nodeR + GAP), vw - EDGE - w);
   if (x < EDGE) x = EDGE;
 
-  // 세로 — 칸 위쪽에 맞춰 내려 그리다가, 바닥을 넘으면
-  // 칸 위로 올려 붙인다 (아래쪽 칸은 위로 뜨게)
+  // 세로 — 칸 위쪽에 맞춰 내려 그리다가, 바닥을 넘으면 칸 위로 올려 붙인다
   let y = nodeT - 6;
   if (y + h > FLOOR) y = nodeB + 6 - h;
   if (y < EDGE) y = EDGE;
@@ -149,15 +200,17 @@ function closeNote(): void {
 }
 
 /* ── 포인터 ─────────────────────────────────────────────────────── */
-canvas.addEventListener('pointermove', (ev) => {
+function slotAt(ev: { clientX: number; clientY: number }): number {
   const r = canvas.getBoundingClientRect();
   const i = paper.hit(ev.clientX - r.left, ev.clientY - r.top);
+  return i >= 0 && bySlot.has(i) ? i : -1;
+}
 
-  // 아직 안 채워진 칸은 집히지 않는다
-  const next = i >= 0 && i < entries.length ? i : -1;
-  if (next === hover) return;
+canvas.addEventListener('pointermove', (ev) => {
+  const next = slotAt(ev);
+  if (next === hoverSlot) return;
 
-  hover = next;
+  hoverSlot = next;
   canvas.style.cursor = next >= 0 ? 'pointer' : 'default';
 
   // 캔버스에 그려지는 호버 표시가 없으므로 다시 그리지 않는다.
@@ -167,8 +220,8 @@ canvas.addEventListener('pointermove', (ev) => {
 });
 
 canvas.addEventListener('pointerleave', () => {
-  if (hover === -1) return;
-  hover = -1;
+  if (hoverSlot === -1) return;
+  hoverSlot = -1;
   canvas.style.cursor = 'default';
   closeNote();
 });
@@ -178,16 +231,73 @@ canvas.addEventListener('click', () => {
   inputEl.focus();
 });
 
-window.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Escape') closeNote();
+/* ── 관리자 삭제 ────────────────────────────────────────────────────
+   Ctrl + Alt + Shift 를 누른 채 칸을 우클릭하면 확인창이 뜬다.
+   지운 칸의 번호는 순서 맨 뒤로 밀려, 판이 다 차기 전에는 다시 쓰이지
+   않는다. 지운 기록은 격리 목록에 남아 되살릴 수 있다. */
+let pending: Entry | null = null;
+
+// 전시용 화면이라 오른쪽 클릭 메뉴는 늘 막는다
+window.addEventListener('contextmenu', (ev) => ev.preventDefault());
+
+canvas.addEventListener('contextmenu', (ev) => {
+  if (!ev.ctrlKey || !ev.altKey || !ev.shiftKey) return;
+
+  const slot = slotAt(ev);
+  const entry = slot >= 0 ? bySlot.get(slot) : undefined;
+  if (!entry) return;
+
+  pending = entry;
+  confirmBody.textContent = entry.body;
+  confirmEl.hidden = false;
+  confirmOk.focus();
 });
 
+function closeConfirm(): void {
+  pending = null;
+  confirmEl.hidden = true;
+  inputEl.focus();
+}
+
+confirmOk.addEventListener('click', () => {
+  if (pending) store.remove(pending.id);
+  closeNote();
+  closeConfirm();
+});
+
+confirmCancel.addEventListener('click', closeConfirm);
+
+/* ── 입력 ───────────────────────────────────────────────────────── */
+whoEl.maxLength = LIMITS.nameMax;
+
+formEl.addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  if (!inputEl.value.trim()) return;
+  if (bySlot.size >= paper.capacity) return;
+
+  if (store.add(inputEl.value, whoEl.value)) {
+    // 이름까지 비운다. 전시장에서는 다음 차례가 다른 사람이라
+    // 이름이 남아 있으면 앞사람 이름으로 글이 올라간다.
+    inputEl.value = '';
+    whoEl.value = '';
+  }
+  closeNote();
+  inputEl.focus();
+});
+
+inputEl.focus();
+
 /* ── 전체 로그 내려받기 ──────────────────────────────────────────────
-   Ctrl + Alt + Shift + O. 전시 마지막 날 기록을 통째로 PDF 로 뽑는다.
-   관람객이 우연히 누를 일이 없도록 조합을 길게 잡았다. */
+   Ctrl + Alt + Shift + O. 전시 마지막 날 기록을 통째로 뽑는다. */
 let exporting = false;
 
 window.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') {
+    if (!confirmEl.hidden) closeConfirm();
+    else closeNote();
+    return;
+  }
+
   // ev.key 는 수식키가 겹치면 레이아웃에 따라 엉뚱한 값이 온다.
   // 물리 키 위치인 ev.code 로 본다.
   if (ev.code !== 'KeyO' || !ev.ctrlKey || !ev.altKey || !ev.shiftKey) return;
@@ -203,26 +313,6 @@ window.addEventListener('keydown', (ev) => {
       window.setTimeout(() => banner(''), 6000);
     });
 });
-
-/* ── 입력 ───────────────────────────────────────────────────────── */
-whoEl.maxLength = LIMITS.nameMax;
-
-formEl.addEventListener('submit', (ev) => {
-  ev.preventDefault();
-  if (!inputEl.value.trim()) return;
-  if (entries.length >= paper.capacity) return;
-
-  if (store.add(inputEl.value, whoEl.value)) {
-    // 이름까지 비운다. 전시장에서는 다음 차례가 다른 사람이라
-    // 이름이 남아 있으면 앞사람 이름으로 글이 올라간다.
-    inputEl.value = '';
-    whoEl.value = '';
-  }
-  closeNote();
-  inputEl.focus();
-});
-
-inputEl.focus();
 
 /* ── 알림 줄 ────────────────────────────────────────────────────────
    운영자에게만 보이면 되는 짧은 안내. 평소에는 DOM 에 없다. */

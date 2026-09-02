@@ -5,6 +5,13 @@ export interface Entry {
   /** 안 쓰면 null */
   name: string | null;
   createdAt: number;
+  /**
+   * 이 기록이 앉은 칸 번호.
+   * 순서(배열 위치)가 아니라 번호를 직접 들고 있어야, 가운데 하나를
+   * 지워도 뒤의 기록들이 칸을 당겨 앉지 않는다.
+   * 지우면 그 번호가 풀려서 다음 글이 그 자리에 들어간다.
+   */
+  slot: number;
 }
 
 export const LIMITS = {

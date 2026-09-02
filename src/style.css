@@ -319,10 +319,15 @@ html, body {
 
 /* ── 왼쪽 열 — 캡션과 기록 사진 ────────────────────────────────────
    모눈 위에 얹히지만 커서는 통과시킨다. 사진 뒤의 칸도 호버된다. */
+/*  전광판 아래부터 입력줄 위까지의 띠 안에서 한 덩어리로 가운데 놓인다. */
 .side {
   position: fixed;
   left: calc(134px / var(--zoom));
-  top: calc(var(--gap-top) + var(--head) + var(--ticker) + 30px / var(--zoom));
+  top: calc(var(--gap-top) + var(--head) + var(--ticker));
+  bottom: calc(88px / var(--zoom));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   z-index: 4;
   /*  본문의 줄바꿈을 그대로 지키려면 가장 긴 줄이 들어갈 폭이 필요하다.
       11.5px 기준 약 408px. 사진 크기는 이 폭에 대한 비율로 잡는다. */
@@ -332,14 +337,42 @@ html, body {
   pointer-events: none;
 }
 
-/*  사진과 같은 너비의 블록 안에서 가운데 정렬.
-    스케치에서 2·3행의 중심이 서로 맞아 있어 그대로 따랐다. */
+/*  좌측정렬이 기본이고, 행마다 일부러 들여쓴다. */
 .label {
-  width: var(--shot-w);
   margin: 0 0 calc(30px / var(--zoom));
-  text-align: center;
   font-size: calc(11.5px / var(--zoom));
   line-height: 1.75;
+  color: var(--ink);
+}
+
+/*  두 행을 긴 쪽(2행) 기준으로 우측정렬한다.
+    max-content 라 블록 폭이 곧 2행의 폭이고, 3행은 그 오른쪽 끝에 맞는다. */
+.label .meta {
+  display: block;
+  width: max-content;
+  margin-left: calc(12px / var(--zoom));
+  text-align: right;
+}
+
+.label .l2,
+.label .l3 {
+  display: block;
+}
+
+/*  테두리를 두른 이름표. 선도 배경도 다른 패널들과 같은 양식. */
+.boxed {
+  display: inline-block;
+  padding: calc(4px / var(--zoom)) calc(9px / var(--zoom));
+  border: 1px solid var(--ink);
+  background: var(--panel);
+  line-height: 1.4;
+}
+
+.label .boxed { margin-bottom: calc(12px / var(--zoom)); }
+
+.tag {
+  margin: 0 0 calc(22px / var(--zoom));
+  font-size: calc(11.5px / var(--zoom));
   color: var(--ink);
 }
 
@@ -378,6 +411,64 @@ html, body {
   font-size: calc(11.5px / var(--zoom));
   line-height: 1.9;
   letter-spacing: -0.005em;
+  color: var(--ink);
+}
+
+/* ── 관리자 삭제 확인 ──────────────────────────────────────────── */
+.confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(24, 24, 24, 0.32);
+}
+
+.confirm[hidden] { display: none; }
+
+.confirm-card {
+  width: min(360px, calc(100vw - 40px));
+  padding: 18px 20px 16px;
+  background: #fff;
+  border: 1px solid var(--ink);
+}
+
+.confirm-title {
+  margin: 0 0 12px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+}
+
+.confirm-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  max-height: 140px;
+  overflow: hidden;
+}
+
+.confirm-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.confirm-row button {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 15px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #fff;
+  cursor: pointer;
+}
+
+.confirm-row .ghost {
+  background: transparent;
   color: var(--ink);
 }
 

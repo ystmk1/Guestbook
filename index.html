@@ -42,10 +42,14 @@
   <!-- 왼쪽 열 — 작품 캡션과 기록 사진 -->
   <aside class="side">
     <p class="label">
-      Sympoiesis<br />
-      2026, 혼합재료, 180×180×160cm<br />
-      강혁준 이은기 조윤서 한수지
+      <span class="boxed">Sympoiesis</span>
+      <span class="meta">
+        <span class="l2">2026, 혼합재료, 180×180×160cm</span>
+        <span class="l3">강혁준 이은기 조윤서 한수지</span>
+      </span>
     </p>
+
+    <p class="tag"><span class="boxed">함께-만들기</span></p>
 
     <div class="shots">
       <img src="/img/16.webp" width="720" height="480" alt="" decoding="async" />
@@ -63,6 +67,18 @@
 인간과 비인간 존재가 서로에게 영향을 주며 하나의 환경을 만들어가는
 과정을 감각적으로 드러내고자 한다.</p>
   </aside>
+
+  <!-- 관리자 삭제 확인 (Ctrl+Alt+Shift + 우클릭) -->
+  <div class="confirm" id="confirm" hidden>
+    <div class="confirm-card">
+      <p class="confirm-title">이 기록을 삭제합니다</p>
+      <p class="confirm-body" id="confirm-body"></p>
+      <div class="confirm-row">
+        <button type="button" class="ghost" id="confirm-cancel">취소</button>
+        <button type="button" id="confirm-ok">삭제</button>
+      </div>
+    </div>
+  </div>
 
   <form class="compose" id="compose" autocomplete="off">
     <input id="who" type="text" maxlength="12" spellcheck="false"
