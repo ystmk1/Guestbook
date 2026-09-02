@@ -11,7 +11,9 @@
       전부 이 값으로 나눠준다. 모눈은 나누지 않아 그대로 커진다. */
   --zoom: 1;
 
-  --head: calc(62px / var(--zoom));
+  /*  입력줄 높이와 맞춘다.
+      입력줄 = 패딩 9+9 + 테두리 1+1 + 내용 약 21 ≈ 41px */
+  --head: calc(42px / var(--zoom));
   --ink: #171717;
   --pencil: rgba(24, 24, 24, 0.42);
   --hair: rgba(24, 24, 24, 0.12);
@@ -85,7 +87,7 @@ html, body {
 
 .head h1 {
   margin: 0;
-  font-size: calc(21px / var(--zoom));
+  font-size: calc(15px / var(--zoom));
   font-weight: 400;
   letter-spacing: -0.012em;
 }
@@ -258,6 +260,23 @@ html, body {
   outline-offset: 3px;
 }
 
+/* ── 작품 캡션 ──────────────────────────────────────────────────────
+   모눈 숫자와 같은 크기로 눌러 둔다. 확대해도 크기가 안 변한다. */
+.label {
+  position: fixed;
+  right: calc(22px / var(--zoom));
+  bottom: calc(20px / var(--zoom));
+  transform-origin: bottom right;
+  z-index: 4;
+
+  margin: 0;
+  text-align: right;
+  font-size: calc(10.5px / var(--zoom));
+  line-height: 1.75;
+  color: var(--ink);
+  pointer-events: none;
+}
+
 /* ── 운영자 알림 (로그 내려받기) ───────────────────────────────── */
 .banner {
   position: fixed;
@@ -278,9 +297,11 @@ html, body {
 }
 
 @media (max-width: 720px) {
-  :root { --head: calc(52px / var(--zoom)); }
-  .head h1 { font-size: calc(18px / var(--zoom)); }
+  :root { --head: calc(40px / var(--zoom)); }
+  .head h1 { font-size: calc(14px / var(--zoom)); }
   .compose { bottom: calc(16px / var(--zoom)); }
+  /* 좁은 화면에서는 입력줄이 폭을 다 쓰므로 캡션을 그 위로 올린다 */
+  .label { bottom: calc(84px / var(--zoom)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
