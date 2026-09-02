@@ -473,9 +473,26 @@ html, body {
   z-index: 15;
   display: grid;
   place-items: center;
+  /* 가운데보다 살짝 위에 놓인다 — 아래로 치우치면 입력줄과 부딪힌다 */
+  padding-bottom: 8vh;
   background: rgba(20, 20, 20, 0.58);
   pointer-events: none;
   transition: opacity 700ms ease;
+}
+
+.attract-in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6.5vh;
+}
+
+/*  사진은 세 갈래로 잡아 어느 화면에서도 잘리지 않는다 —
+    가로 비율, 세로 비율(원본 비율 2.219 를 곱해 폭으로 환산), 절대 상한. */
+.attract-in img {
+  display: block;
+  width: min(55vw, calc(46vh * 2.219), 1120px);
+  height: auto;
 }
 
 .attract.away {
