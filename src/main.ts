@@ -123,6 +123,19 @@ requestAnimationFrame(frame);
 const sideEl = document.querySelector('.side') as HTMLElement;
 const sideInner = $<HTMLElement>('side-inner');
 
+/*  오른쪽 위 설명 줄글은 왼쪽 캡션의 둘째 줄(재료·크기)과 같은 높이에서
+    시작한다. 그 줄이 화면 어디에 놓이는지는 왼쪽 열을 얼마나 확대했는지에
+    달렸으므로, 계산하지 않고 실제로 그려진 자리를 잰다. */
+const aboutEl = document.querySelector('.about') as HTMLElement | null;
+const l2El = document.querySelector('.label .l2') as HTMLElement | null;
+
+function placeAbout(): void {
+  if (!aboutEl || !l2El) return;
+  // 좁은 화면에서는 둘 다 숨어 있다 — 잰 값이 0이면 손대지 않는다
+  const y = l2El.getBoundingClientRect().top;
+  if (y > 0) aboutEl.style.top = `${Math.round(y)}px`;
+}
+
 function fitSide(): void {
   const band = sideEl.clientHeight;
   const natural = sideInner.offsetHeight;
@@ -130,6 +143,9 @@ function fitSide(): void {
 
   const k = Math.max(0.5, Math.min(1.8, band / natural));
   sideInner.style.transform = `scale(${k.toFixed(4)})`;
+
+  // transform 은 바로 반영되므로 이어서 재도 어긋나지 않는다
+  placeAbout();
 }
 
 new ResizeObserver(fitSide).observe(sideEl);
