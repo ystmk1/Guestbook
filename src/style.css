@@ -482,16 +482,20 @@ html, body {
   opacity: 0;
 }
 
+/*  이 폰트는 굵은 자족이 없다(03 한 벌뿐). font-weight 를 올리면
+    가짜 굵기가 붙거나 대체 폰트로 튄다. 대신 같은 흰색으로 획을 둘러
+    글자 면적을 넓힌다 — 어두운 바탕에서 훨씬 또렷해진다. */
 .attract p {
   margin: 0;
   text-align: center;
   font-size: calc(40px / var(--zoom));
   font-weight: 400;
-  line-height: 2.1;
-  letter-spacing: -0.01em;
+  line-height: 1.95;
+  letter-spacing: -0.005em;
   color: #fff;
+  -webkit-text-stroke: calc(0.9px / var(--zoom)) #fff;
+  paint-order: stroke fill;
   word-break: keep-all;
-  text-wrap: balance;
 }
 
 @media (max-width: 720px) {
