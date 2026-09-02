@@ -29,6 +29,10 @@
       확대 배율에 따라 달라지므로 main.ts 가 재서 넣는다. */
   --frame: calc(82px / var(--zoom));
 
+  /*  왼쪽 열 덩어리에 걸린 배율. main.ts 가 재서 넣는다.
+      오른쪽 줄글은 그 덩어리 밖이라 이 값으로 직접 크기를 맞춘다. */
+  --side-k: 1;
+
   /*  흰 패널들. 완전 불투명이 아니라 배경이 아주 살짝 비친다. */
   --panel: rgba(255, 255, 255, 0.9);
   --ink: #171717;
@@ -341,7 +345,9 @@ html, body {
   position: fixed;
   left: var(--frame);
   top: calc(var(--gap-top) + var(--head) + var(--ticker) + var(--side-pad));
-  bottom: var(--side-pad);
+  /*  입력줄 윗변에서 끊는다. 사진 밑단이 입력줄을 넘지 않게 하려는 것.
+      입력줄 높이는 글꼴에 따라 조금씩 달라서 main.ts 가 재서 넣는다. */
+  bottom: var(--side-bottom, 92px);
   z-index: 4;
   /*  본문의 줄바꿈을 그대로 지키려면 가장 긴 줄이 들어갈 폭이 필요하다.
       11.5px 기준 약 408px. 사진 크기는 이 폭에 대한 비율로 잡는다. */
@@ -450,7 +456,8 @@ html, body {
 
   margin: 0;
   white-space: pre-line;
-  font-size: calc(11.5px / var(--zoom));
+  /* 왼쪽 캡션과 같은 11.5px 에 같은 배율을 곱한다 */
+  font-size: calc(11.5px * var(--side-k) / var(--zoom));
   line-height: 1.9;
   letter-spacing: -0.005em;
   color: var(--ink);

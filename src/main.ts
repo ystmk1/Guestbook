@@ -147,12 +147,27 @@ function placeAbout(): void {
 }
 
 function fitSide(): void {
+  /*  왼쪽 열이 내려갈 수 있는 바닥 = 입력줄 윗변.
+      높이를 상수로 박지 않고 실제로 잰다 — 글꼴이나 확대 배율에 따라
+      입력줄 높이가 달라진다.
+      밴드 높이를 읽기 전에 넣어야 이번 호출에서 바로 반영된다. */
+  const composeTop = formEl.getBoundingClientRect().top;
+  if (composeTop > 0) {
+    const floor = Math.max(0, Math.round(window.innerHeight - composeTop));
+    document.documentElement.style.setProperty('--side-bottom', `${floor}px`);
+  }
+
   const band = sideEl.clientHeight;
   const natural = sideInner.offsetHeight;
   if (!band || !natural) return;
 
   const k = Math.max(0.5, Math.min(1.8, band / natural));
   sideInner.style.transform = `scale(${k.toFixed(4)})`;
+
+  /*  오른쪽 줄글은 이 덩어리 밖에 있어 scale 을 못 받는다. 배율을 내어주면
+      글자 크기를 같은 비율로 키워 두 글이 같은 크기로 읽힌다.
+      행간은 단위 없는 비율이라 글자를 따라 저절로 벌어진다. */
+  document.documentElement.style.setProperty('--side-k', k.toFixed(4));
 
   // transform 은 바로 반영되므로 이어서 재도 어긋나지 않는다
   placeAbout();
