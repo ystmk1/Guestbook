@@ -188,9 +188,10 @@ html, body {
   margin: 0 0 7px;
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.2em;
+  /* 자간을 벌리지 않는다 — 벌려 놓으면 사람이 쓴 조판처럼 안 읽힌다 */
+  letter-spacing: normal;
   font-variant-numeric: tabular-nums;
-  color: var(--accent);
+  color: var(--pencil);
 }
 
 /*  글자수 제한이 없으므로 줄이 늘면 상자도 같이 길어진다.
@@ -222,7 +223,7 @@ html, body {
   justify-content: space-between;
   gap: 12px;
   font-size: 10px;
-  letter-spacing: 0.13em;
+  letter-spacing: normal;
   font-variant-numeric: tabular-nums;
   color: var(--pencil);
 }
