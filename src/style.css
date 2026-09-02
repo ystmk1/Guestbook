@@ -60,6 +60,9 @@ html, body {
 }
 
 /* ── 제호 ───────────────────────────────────────────────────────── */
+/*  제호는 모눈이 시작되기 전 띠에 놓인다. 그 띠를 흰색으로 채운다 —
+    배경 영상이 그대로 비치면 제목이 묻힌다. 가로는 화면 전체,
+    세로는 모눈이 시작되는 지점(--head)까지. */
 .head {
   position: fixed;
   top: 0;
@@ -68,6 +71,7 @@ html, body {
   height: var(--head);
   display: grid;
   place-items: center;
+  background: #fff;
   z-index: 3;
   pointer-events: none;
 }
@@ -174,7 +178,6 @@ html, body {
   padding: 9px 12px 9px 14px;
   background: #fff;
   border: 1px solid var(--ink);
-  box-shadow: 3px 3px 0 rgba(24, 24, 24, 0.13);
 }
 
 .compose input {
