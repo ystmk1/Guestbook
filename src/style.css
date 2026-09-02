@@ -17,6 +17,12 @@
 
   /*  화면 맨 위와 제호 띠 사이 여백. 모눈 한 칸(24px)의 절반. */
   --gap-top: calc(12px / var(--zoom));
+
+  /*  제호 아래 안내 전광판 띠 */
+  --ticker: calc(26px / var(--zoom));
+
+  /*  흰 패널들. 완전 불투명이 아니라 배경이 아주 살짝 비친다. */
+  --panel: rgba(255, 255, 255, 0.9);
   --ink: #171717;
   --pencil: rgba(24, 24, 24, 0.42);
   --hair: rgba(24, 24, 24, 0.12);
@@ -81,7 +87,7 @@ html, body {
   height: var(--head);
   display: grid;
   place-items: center;
-  background: #fff;
+  background: var(--panel);
   /* 위아래 모두 입력줄·쪽지와 같은 1px 먹선 */
   border-top: 1px solid var(--ink);
   border-bottom: 1px solid var(--ink);
@@ -96,13 +102,60 @@ html, body {
   letter-spacing: -0.012em;
 }
 
+/* ── 안내 전광판 ────────────────────────────────────────────────────
+   제호 띠 바로 아래에 붙는다. 위 선은 제호 띠의 아래 선이 겸한다. */
+.ticker {
+  position: fixed;
+  top: calc(var(--gap-top) + var(--head));
+  left: 0;
+  right: 0;
+  height: var(--ticker);
+  overflow: hidden;
+  background: var(--panel);
+  border-bottom: 1px solid var(--ink);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/*  같은 내용을 두 벌 이어 붙이고 정확히 절반만큼 밀어낸다.
+    끝과 처음이 맞물려서 이음매가 보이지 않는다. */
+.ticker-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  align-items: center;
+  animation: ticker var(--ticker-dur, 90s) linear infinite;
+}
+
+.ticker-set {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.ticker-set span {
+  padding-right: calc(64px / var(--zoom));
+  font-size: calc(11.5px / var(--zoom));
+  line-height: 1;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
+}
+
 /* ── 모눈 ───────────────────────────────────────────────────────── */
 #paper {
   position: fixed;
   left: 0;
-  top: calc(var(--gap-top) + var(--head));
+  top: calc(var(--gap-top) + var(--head) + var(--ticker));
   width: 100vw;
-  height: calc(100vh - var(--gap-top) - var(--head));
+  height: calc(100vh - var(--gap-top) - var(--head) - var(--ticker));
   display: block;
   z-index: 1;
 }
@@ -115,7 +168,7 @@ html, body {
   z-index: 5;
   width: min(320px, calc(100vw - 24px));
   padding: 14px 16px 12px;
-  background: #fff;
+  background: var(--panel);
   border: 1px solid var(--ink);
   animation: pop 140ms ease-out;
   /* 호버로 뜨는 창이라 커서를 가로채면 안 된다.
@@ -202,7 +255,7 @@ html, body {
 
   width: min(480px, calc((100vw - 40px) * var(--zoom)));
   padding: 9px 12px 9px 14px;
-  background: #fff;
+  background: var(--panel);
   border: 1px solid var(--ink);
 }
 
@@ -264,23 +317,42 @@ html, body {
   outline-offset: 3px;
 }
 
-/* ── 작품 캡션 ──────────────────────────────────────────────────────
-   모눈 숫자와 같은 크기로 눌러 둔다. 확대해도 크기가 안 변한다. */
-.label {
+/* ── 왼쪽 열 — 캡션과 기록 사진 ────────────────────────────────────
+   모눈 위에 얹히지만 커서는 통과시킨다. 사진 뒤의 칸도 호버된다. */
+.side {
   position: fixed;
-  /* 시각보정 — 모서리에서 아주 조금 안쪽으로 */
-  right: calc(26px / var(--zoom));
-  bottom: calc(24px / var(--zoom));
-  transform-origin: bottom right;
+  left: calc(34px / var(--zoom));
+  top: calc(var(--gap-top) + var(--head) + var(--ticker) + 34px / var(--zoom));
   z-index: 4;
+  width: calc(220px / var(--zoom));
+  pointer-events: none;
+}
 
-  margin: 0;
-  text-align: right;
+.label {
+  margin: 0 0 calc(26px / var(--zoom));
   font-size: calc(11.5px / var(--zoom));
   line-height: 1.75;
   color: var(--ink);
-  pointer-events: none;
 }
+
+/*  기록 사진. 사진마다 조금씩 어긋나게 놓아 붙여 놓은 인상을 만든다. */
+.shots {
+  display: flex;
+  flex-direction: column;
+  gap: calc(10px / var(--zoom));
+}
+
+.shots img {
+  display: block;
+  height: auto;
+  /* 흰 패널들과 같은 정도로만 배경이 비친다 */
+  opacity: 0.94;
+}
+
+.shots img:nth-child(1) { width: calc(150px / var(--zoom)); margin-left: calc(18px / var(--zoom)); }
+.shots img:nth-child(2) { width: calc(126px / var(--zoom)); margin-left: calc(64px / var(--zoom)); }
+.shots img:nth-child(3) { width: calc(148px / var(--zoom)); margin-left: calc(32px / var(--zoom)); }
+.shots img:nth-child(4) { width: calc(142px / var(--zoom)); margin-left: calc(4px / var(--zoom)); }
 
 /* ── 운영자 알림 (로그 내려받기) ───────────────────────────────── */
 .banner {
@@ -305,8 +377,8 @@ html, body {
   :root { --head: calc(40px / var(--zoom)); }
   .head h1 { font-size: calc(14px / var(--zoom)); }
   .compose { bottom: calc(16px / var(--zoom)); }
-  /* 좁은 화면에서는 입력줄이 폭을 다 쓰므로 캡션을 그 위로 올린다 */
-  .label { bottom: calc(84px / var(--zoom)); }
+  /* 좁은 화면에서는 왼쪽 열이 판면을 다 덮는다 */
+  .side { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

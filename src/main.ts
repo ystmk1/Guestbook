@@ -5,6 +5,7 @@ import { Store } from './store';
 import { createPaper } from './grid';
 import { exportLog } from './export';
 import { blockAccidentalZoom, trackZoom } from './zoom';
+import { startTicker } from './ticker';
 
 /* =====================================================================
    Sympoiesis · Guestbook
@@ -29,6 +30,11 @@ const whoEl = $<HTMLInputElement>('who');
     --zoom 이 정해져야 --head 가 결정되고, 그래야 캔버스 높이가 맞다. */
 trackZoom();
 blockAccidentalZoom();
+
+startTicker(
+  $<HTMLElement>('ticker-track'),
+  '양손으로 두 식물의 잎을 줄기에 가깝게 잡고 기다려주세요',
+);
 
 const paper = createPaper(canvas);
 const store = new Store();

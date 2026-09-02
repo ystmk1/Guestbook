@@ -23,6 +23,12 @@
     <h1>방명록</h1>
   </header>
 
+  <!-- 안내 전광판. 내용은 main.ts 가 채운다 (화면 폭만큼 반복해야 해서) -->
+  <div class="ticker" id="ticker"
+       aria-label="양손으로 두 식물의 잎을 줄기에 가깝게 잡고 기다려주세요">
+    <div class="ticker-track" id="ticker-track" aria-hidden="true"></div>
+  </div>
+
   <!-- 모눈 · 숫자 · 채워진 칸이 모두 여기 그려진다 -->
   <canvas id="paper"></canvas>
 
@@ -33,12 +39,21 @@
     <p class="note-d"><span id="note-who"></span><span id="note-d"></span></p>
   </div>
 
-  <!-- 작품 캡션 -->
-  <p class="label">
-    Sympoiesis<br />
-    2026, 혼합재료, 180×180×160cm<br />
-    강혁준 이은기 조윤서 한수지
-  </p>
+  <!-- 왼쪽 열 — 작품 캡션과 기록 사진 -->
+  <aside class="side">
+    <p class="label">
+      Sympoiesis<br />
+      2026, 혼합재료, 180×180×160cm<br />
+      강혁준 이은기 조윤서 한수지
+    </p>
+
+    <div class="shots">
+      <img src="/img/16.webp" width="720" height="480" alt="" decoding="async" />
+      <img src="/img/17.webp" width="720" height="480" alt="" decoding="async" />
+      <img src="/img/18.webp" width="720" height="480" alt="" decoding="async" />
+      <img src="/img/19.webp" width="720" height="480" alt="" decoding="async" />
+    </div>
+  </aside>
 
   <form class="compose" id="compose" autocomplete="off">
     <input id="who" type="text" maxlength="12" spellcheck="false"
