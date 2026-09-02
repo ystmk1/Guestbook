@@ -264,14 +264,15 @@ html, body {
    모눈 숫자와 같은 크기로 눌러 둔다. 확대해도 크기가 안 변한다. */
 .label {
   position: fixed;
-  right: calc(22px / var(--zoom));
-  bottom: calc(20px / var(--zoom));
+  /* 시각보정 — 모서리에서 아주 조금 안쪽으로 */
+  right: calc(26px / var(--zoom));
+  bottom: calc(24px / var(--zoom));
   transform-origin: bottom right;
   z-index: 4;
 
   margin: 0;
   text-align: right;
-  font-size: calc(10.5px / var(--zoom));
+  font-size: calc(11.5px / var(--zoom));
   line-height: 1.75;
   color: var(--ink);
   pointer-events: none;
