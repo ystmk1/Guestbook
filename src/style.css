@@ -475,21 +475,21 @@ html, body {
   place-items: center;
   /* 가운데보다 살짝 위에 놓인다 — 아래로 치우치면 입력줄과 부딪힌다 */
   padding-bottom: 8vh;
-  /* 사진이 75% 로 얹히므로 나머지 25% 는 이 검정이 채운다 = 밝기 75% */
+  /* 사진이 60% 로 얹히므로 나머지 40% 는 이 검정이 채운다 = 밝기 60% */
   background: #000;
   pointer-events: none;
   transition: opacity 700ms ease;
 }
 
 /*  배경 사진.
-    filter: brightness() 대신 검정 위에 75% 로 얹었다. 결과는 같은데
+    filter: brightness() 대신 검정 위에 60% 로 얹었다. 결과는 같은데
     전체화면에 매 프레임 픽셀 연산을 얹지 않는다. */
 .attract::before {
   content: "";
   position: absolute;
   inset: 0;
   background: url("/img/attract-bg.webp") center / cover no-repeat;
-  opacity: 0.75;
+  opacity: 0.6;
 }
 
 .attract-in {
