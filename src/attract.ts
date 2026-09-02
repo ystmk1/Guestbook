@@ -21,8 +21,26 @@ const IDLE = 20000;
 /** 웹캠을 몇 밀리초마다 볼지 */
 const LOOK = 220;
 
-/** 이 정도 이상 달라지면 움직임으로 본다 (0~255 평균 차) */
-const MOTION = 6;
+/*  움직임 판정.
+
+    평균 차이로 보면 너무 쉽게 걸린다 — 어두운 방의 센서 노이즈가
+    화면 전체를 조금씩 흔들어 평균을 금방 넘긴다. 그러면 안내문이
+    계속 걷혀서 읽을 수가 없다.
+
+    사람이 움직이면 '일부 영역이 크게' 바뀌고, 노이즈는 '전체가 조금씩'
+    바뀐다. 그래서 크게 바뀐 화소가 몇 퍼센트인지로 본다. */
+
+/** 한 화소가 이만큼 넘게 바뀌어야 바뀐 것으로 친다 (0~255) */
+const PIXEL = 26;
+
+/** 그런 화소가 화면의 이 비율을 넘어야 움직임으로 본다 */
+const AREA = 0.045;
+
+/** 그 상태가 이만큼 연달아 이어져야 사람으로 친다 */
+const STREAK = 2;
+
+/** 커서가 이만큼(px) 움직여야 조작으로 친다 — 손 떨림은 무시 */
+const MOVE = 28;
 
 const W = 64;
 const H = 48;
@@ -52,9 +70,36 @@ export function startAttract(el: HTMLElement, useCamera = true): Attract {
   };
 
   /* ── 입력 ─────────────────────────────────────────────────────── */
-  for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) {
+
+  // 누르거나 치는 건 분명한 의사라 바로 걷는다
+  for (const type of ['pointerdown', 'keydown', 'wheel', 'touchstart']) {
     window.addEventListener(type, hide, { passive: true });
   }
+
+  /*  커서는 조금 움직였다고 걷지 않는다. 책상 진동이나 손 떨림으로도
+      pointermove 는 뜬다. 마지막으로 걷은 자리에서 일정 거리 이상
+      벗어났을 때만 조작으로 친다. */
+  let ax = -1;
+  let ay = -1;
+
+  window.addEventListener(
+    'pointermove',
+    (ev) => {
+      if (ax < 0) {
+        ax = ev.clientX;
+        ay = ev.clientY;
+        return;
+      }
+      const dx = ev.clientX - ax;
+      const dy = ev.clientY - ay;
+      if (dx * dx + dy * dy < MOVE * MOVE) return;
+
+      ax = ev.clientX;
+      ay = ev.clientY;
+      hide();
+    },
+    { passive: true },
+  );
 
   /* ── 웹캠 ─────────────────────────────────────────────────────── */
   // 낡은 브라우저나 안전하지 않은 접속(http)에서는 mediaDevices 가 아예 없다
@@ -89,6 +134,7 @@ async function watchCamera(onMotion: () => void): Promise<void> {
       쓰면 3KB 고, 버퍼를 다시 써서 아예 안 버린다. */
   const prev = new Uint8Array(W * H);
   let primed = false;
+  let streak = 0;
 
   window.setInterval(() => {
     if (document.visibilityState !== 'visible') return;
@@ -96,11 +142,11 @@ async function watchCamera(onMotion: () => void): Promise<void> {
     ctx.drawImage(video, 0, 0, W, H);
     const cur = ctx.getImageData(0, 0, W, H).data;
 
-    let sum = 0;
+    let changed = 0;
     for (let p = 0, i = 0; p < prev.length; p++, i += 4) {
       // 빨강 한 채널로 충분하다. 셋 다 보면 세 배 든다.
       const v = cur[i];
-      if (primed) sum += Math.abs(v - prev[p]);
+      if (primed && Math.abs(v - prev[p]) > PIXEL) changed++;
       prev[p] = v;
     }
 
@@ -110,6 +156,12 @@ async function watchCamera(onMotion: () => void): Promise<void> {
       return;
     }
 
-    if (sum / prev.length > MOTION) onMotion();
+    // 한 번 튄 것으로는 안 걷는다. 연달아 이어져야 사람으로 친다.
+    if (changed / prev.length > AREA) {
+      streak++;
+      if (streak >= STREAK) onMotion();
+    } else {
+      streak = 0;
+    }
   }, LOOK);
 }
