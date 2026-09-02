@@ -21,6 +21,9 @@
   /*  제호 아래 안내 전광판 띠 */
   --ticker: calc(26px / var(--zoom));
 
+  /*  왼쪽 열의 위아래 여백. 이 값만 지키고 덩어리 크기는 알아서 맞춘다. */
+  --side-pad: calc(30px / var(--zoom));
+
   /*  흰 패널들. 완전 불투명이 아니라 배경이 아주 살짝 비친다. */
   --panel: rgba(255, 255, 255, 0.9);
   --ink: #171717;
@@ -320,22 +323,31 @@ html, body {
 
 /* ── 왼쪽 열 — 캡션과 기록 사진 ────────────────────────────────────
    모눈 위에 얹히지만 커서는 통과시킨다. 사진 뒤의 칸도 호버된다. */
-/*  전광판 아래부터 입력줄 위까지의 띠 안에서 한 덩어리로 가운데 놓인다. */
+/*  왼쪽 열은 전광판 아래부터 화면 맨 아래까지의 띠를 차지한다.
+    위아래 여백만 고정하고, 덩어리 크기는 남는 높이에 맞춰 조절한다
+    (main.ts 가 잰다). 전시장 화면 해상도를 몰라도 여백이 어긋나지 않는다.
+
+    입력줄과는 가로로 겹치지 않는다 — 입력줄은 화면 가운데에 있다. */
 .side {
   position: fixed;
   left: calc(134px / var(--zoom));
-  top: calc(var(--gap-top) + var(--head) + var(--ticker));
-  bottom: calc(88px / var(--zoom));
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  top: calc(var(--gap-top) + var(--head) + var(--ticker) + var(--side-pad));
+  bottom: var(--side-pad);
   z-index: 4;
   /*  본문의 줄바꿈을 그대로 지키려면 가장 긴 줄이 들어갈 폭이 필요하다.
       11.5px 기준 약 408px. 사진 크기는 이 폭에 대한 비율로 잡는다. */
   width: calc(410px / var(--zoom));
   /* 사진 한 장의 폭. 캡션 블록도 이 폭을 쓴다. */
-  --shot-w: 63%;
+  --shot-w: 57%;
   pointer-events: none;
+}
+
+/*  실제로 크기가 조절되는 덩어리.
+    transform 은 레이아웃 크기를 바꾸지 않으므로 offsetHeight 로 잰
+    원래 높이를 그대로 쓸 수 있다 — 재는 값과 그리는 값이 안 엉킨다. */
+.side-inner {
+  transform-origin: top left;
+  will-change: transform;
 }
 
 /*  좌측정렬이 기본이고, 행마다 일부러 들여쓴다. */

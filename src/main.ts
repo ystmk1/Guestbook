@@ -114,6 +114,34 @@ function frame(now: number): void {
 
 requestAnimationFrame(frame);
 
+/* ── 왼쪽 열 크기 맞추기 ────────────────────────────────────────────
+   전시장 화면 해상도를 모르므로 픽셀로 못 박지 않는다. 위아래 여백만
+   지키고, 덩어리 전체를 남는 높이에 맞춰 확대·축소한다.
+
+   transform 은 레이아웃 크기를 바꾸지 않으므로 offsetHeight 는 늘
+   원래 높이다 — 재는 값과 그리는 값이 서로를 밀어내지 않는다. */
+const sideEl = document.querySelector('.side') as HTMLElement;
+const sideInner = $<HTMLElement>('side-inner');
+
+function fitSide(): void {
+  const band = sideEl.clientHeight;
+  const natural = sideInner.offsetHeight;
+  if (!band || !natural) return;
+
+  const k = Math.max(0.5, Math.min(1.8, band / natural));
+  sideInner.style.transform = `scale(${k.toFixed(4)})`;
+}
+
+new ResizeObserver(fitSide).observe(sideEl);
+new ResizeObserver(fitSide).observe(sideInner);
+
+// 사진과 글꼴이 늦게 들어오면 높이가 달라진다
+for (const img of sideInner.querySelectorAll('img')) {
+  img.addEventListener('load', fitSide, { once: true });
+}
+void document.fonts?.ready.then(fitSide).catch(() => undefined);
+fitSide();
+
 /* ── 크기 ───────────────────────────────────────────────────────── */
 function fit(): void {
   const w = canvas.clientWidth;
