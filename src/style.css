@@ -464,6 +464,44 @@ html, body {
   pointer-events: none;
 }
 
+/* ── 안내 화면 ──────────────────────────────────────────────────────
+   아무도 없을 때 판면을 살짝 덮는다. 커서를 가로채지 않으므로
+   덮여 있는 동안에도 아래가 그대로 동작한다 — 어차피 손대는 순간 걷힌다. */
+.attract {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 20, 20, 0.58);
+  pointer-events: none;
+  transition: opacity 700ms ease;
+}
+
+.attract.away {
+  opacity: 0;
+}
+
+.attract p {
+  margin: 0;
+  text-align: center;
+  font-size: calc(40px / var(--zoom));
+  font-weight: 400;
+  line-height: 2.1;
+  letter-spacing: -0.01em;
+  color: #fff;
+  word-break: keep-all;
+  text-wrap: balance;
+}
+
+@media (max-width: 720px) {
+  .attract p { font-size: calc(24px / var(--zoom)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attract { transition-duration: 1ms; }
+}
+
 /* ── 관리자 삭제 확인 ──────────────────────────────────────────── */
 .confirm {
   position: fixed;
