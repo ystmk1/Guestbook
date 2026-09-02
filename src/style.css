@@ -499,14 +499,14 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6.5vh;
+  gap: 5vh;
 }
 
 /*  사진은 세 갈래로 잡아 어느 화면에서도 잘리지 않는다 —
     가로 비율, 세로 비율(원본 비율 2.219 를 곱해 폭으로 환산), 절대 상한. */
 .attract-in img {
   display: block;
-  width: min(55vw, calc(46vh * 2.219), 1120px);
+  width: min(50vw, calc(42vh * 2.219), 1040px);
   height: auto;
 }
 
@@ -520,9 +520,12 @@ html, body {
 .attract p {
   margin: 0;
   text-align: center;
-  /*  좁은 화면에서 줄이 넘치지 않게 vw 로도 한 번 잡아둔다.
-      가장 긴 줄이 글자 크기의 약 13배라 4.6vw 면 어디서도 들어간다. */
-  font-size: calc(min(64px, 4.6vw) / var(--zoom));
+  /*  세 갈래로 잡는다.
+        4vw  — 가장 긴 줄이 글자 크기의 약 13배라 가로로 안 넘친다
+        5vh  — 세로가 짧은 화면에서 사진과 합쳐 화면을 넘지 않게.
+               이게 없으면 1366x768 같은 화면에서 위가 잘린다
+        56px — 큰 화면에서 무한정 커지지 않게 */
+  font-size: calc(min(56px, 4vw, 5vh) / var(--zoom));
   font-weight: 400;
   line-height: 1.85;
   letter-spacing: -0.005em;
