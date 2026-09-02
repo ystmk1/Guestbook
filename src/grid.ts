@@ -185,23 +185,27 @@ export function buildCells(cols: number, rows: number): Cell[] {
 }
 
 export interface Paper {
-  cell: number;
-  cells: Cell[];
+  /** 한 칸의 크기 (CSS 픽셀) */
+  cellSize: number;
+  /** 글이 앉을 수 있는 전체 자리 수 — 격자 전체다 */
   capacity: number;
-  /** 화면 좌표 → cells 인덱스 (없으면 -1) */
+  /** 그중 밑그림이 깔린 자리 수 */
+  patterned: number;
+  /** 화면 좌표 → 자리 번호 (없으면 -1) */
   hit(px: number, py: number): number;
   /**
-   * 채워진 칸 번호들을 그린다.
-   * growSlot 은 방금 채워져 스며드는 중인 칸.
+   * 채워진 자리를 그린다.
+   * labels 는 자리 번호 → 그 칸에 적을 글자(방명록 순번).
+   * growSlot 은 방금 채워져 스며드는 중인 자리.
    */
   draw(
-    occupied: ReadonlySet<number>,
+    labels: ReadonlyMap<number, string>,
     growSlot: number,
     growT: number,
     time: number,
   ): void;
   resize(w: number, h: number): void;
-  /** 셀의 화면 사각형 */
+  /** 자리의 화면 사각형 (CSS 픽셀) */
   rectOf(i: number): { x: number; y: number; w: number; h: number };
 }
 
@@ -210,160 +214,270 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
 
   let cols = 0;
   let rows = 0;
-  let cell = CELL_TARGET;
-  let W = 0;
-  let H = 0;
   let dpr = 1;
 
+  /*  칸 경계를 디바이스 픽셀 정수로 미리 잡아둔다.
+      폭 ÷ 열수는 대개 소수라, 그대로 그리면 칸마다 경계가 반 픽셀에
+      걸려 한 칸씩 밀린 것처럼 보이고 사이에 실틈이 생긴다.
+      경계를 정수로 반올림해두면 칸이 서로 정확히 맞물려 빈틈이 없다. */
+  let bx = new Int32Array(0);
+  let by = new Int32Array(0);
+
+  /*  cells 앞쪽은 밑그림이 깔린 자리, 뒤쪽은 빈 격자 자리다.
+      앞쪽을 다 쓰면 뒤쪽으로 이어진다 — 빈 격자에는 밑그림이 없어서
+      글이 올라오는 순간에만 칸이 나타난다. */
   let cells: Cell[] = [];
+  let patterned = 0;
   let lookup = new Map<number, number>();
   let base: HTMLCanvasElement | null = null;
 
+  /*  증분 그리기 기록.
+      매 프레임 화면 전체를 다시 까는 건 낭비다 — 4K·DPR2 면 프레임마다
+      830만 픽셀을 옮긴다. 색 단계가 바뀐 칸만 밑그림에서 도로 떠다
+      붙이고 다시 그린다. 칸 경계가 정수라 떠올 때 옆 칸을 건드리지 않는다. */
+  const stepOf = new Map<number, number>();
+  let lastLabels: ReadonlyMap<number, string> | null = null;
+  let needsFull = true;
+
+  /*  긴 순번도 칸에 들어가게 글자 크기를 줄여 맞춘다.
+      같은 글자는 다시 재지 않는다. */
+  const fitted = new Map<string, number>();
+
+  const FONT = 'px "SM3SJGothic", "Malgun Gothic", sans-serif';
+
+  function setFont(g: CanvasRenderingContext2D, size: number): void {
+    g.font = size.toFixed(2) + FONT;
+  }
+
+  /** text 가 maxW 안에 들어가는 글자 크기 */
+  function fitSize(
+    g: CanvasRenderingContext2D,
+    text: string,
+    maxW: number,
+    want: number,
+  ): number {
+    const key = text + '|' + want.toFixed(1) + '|' + maxW.toFixed(1);
+    const seen = fitted.get(key);
+    if (seen !== undefined) return seen;
+
+    setFont(g, want);
+    const w = g.measureText(text).width;
+    const size = w > maxW ? Math.max(6, (want * maxW) / w) : want;
+    fitted.set(key, size);
+    return size;
+  }
+
   /* ── 생성 ─────────────────────────────────────────────────────── */
   function build(): void {
-    cells = buildCells(cols, rows);
+    const pattern = buildCells(cols, rows);
+
+    // 밑그림이 없는 나머지 격자 자리. 앞쪽이 다 차면 여기로 이어진다.
+    const taken = new Set<number>();
+    for (const c of pattern) taken.add(c.y * cols + c.x);
+
+    const rest: Cell[] = [];
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        if (!taken.has(y * cols + x)) rest.push({ x, y, d: -1 });
+      }
+    }
+
+    // 뒤쪽도 흩어놓는다. 안 그러면 왼쪽 위부터 줄줄이 차오른다.
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(hash(i, 7, 613) * (i + 1));
+      const t = rest[i];
+      rest[i] = rest[j];
+      rest[j] = t;
+    }
+
+    cells = pattern.concat(rest);
+    patterned = pattern.length;
+
     lookup = new Map();
     for (let i = 0; i < cells.length; i++) {
       lookup.set(cells[i].y * cols + cells[i].x, i);
     }
   }
 
-  /* ── 정적 레이어 ───────────────────────────────────────────────
-     모눈과 안 채워진 칸은 변하지 않는다. 한 번만 그려두고 매번
-     통째로 복사한다 — 셀이 수천 개여도 다시 그릴 일이 없다. */
+  /* ── 밑그림 ────────────────────────────────────────────────────
+     모눈과 안 채워진 칸은 변하지 않는다. 한 번만 그려두고 필요한
+     조각만 떠다 쓴다. 전부 디바이스 픽셀 기준으로 그린다. */
   function paintBase(): void {
     const c = document.createElement('canvas');
-    c.width = Math.max(1, Math.round(W * dpr));
-    c.height = Math.max(1, Math.round(H * dpr));
+    c.width = canvas.width;
+    c.height = canvas.height;
     const b = c.getContext('2d')!;
-    b.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // 배경을 칠하지 않는다. 캔버스는 투명하게 두고 뒤에 깔린 영상이
-    // 그대로 비쳐 보이게 한다. 종이색은 body 가 낸다.
+    const W = c.width;
+    const H = c.height;
+    const line = Math.max(1, Math.round(dpr));
 
-    // 모눈 — 5칸마다 조금 진하게
-    b.lineWidth = 1;
+    // 배경은 칠하지 않는다. 뒤에 깔린 영상이 그대로 비쳐야 한다.
+
+    // 모눈 — 5칸마다 조금 진하게. 획도 정수 픽셀이라 흐려지지 않는다.
     for (let i = 0; i <= cols; i++) {
-      const x = Math.round(i * cell) + 0.5;
-      b.strokeStyle = i % 5 === 0 ? RULE_BOLD : RULE;
-      b.beginPath();
-      b.moveTo(x, 0);
-      b.lineTo(x, H);
-      b.stroke();
+      b.fillStyle = i % 5 === 0 ? RULE_BOLD : RULE;
+      b.fillRect(Math.min(bx[i], W - line), 0, line, H);
     }
     for (let j = 0; j <= rows; j++) {
-      const y = Math.round(j * cell) + 0.5;
-      b.strokeStyle = j % 5 === 0 ? RULE_BOLD : RULE;
-      b.beginPath();
-      b.moveTo(0, y);
-      b.lineTo(W, y);
-      b.stroke();
+      b.fillStyle = j % 5 === 0 ? RULE_BOLD : RULE;
+      b.fillRect(0, Math.min(by[j], H - line), W, line);
     }
 
-    const fs = Math.max(8, cell * 0.42);
-    b.font = fs + 'px "SM3SJGothic", "Malgun Gothic", sans-serif';
     b.textAlign = 'center';
     b.textBaseline = 'middle';
 
-    for (const q of cells) {
-      const x = q.x * cell;
-      const y = q.y * cell;
+    const cellDev = cols ? W / cols : 1;
+    const want = Math.max(7, cellDev * 0.42);
+
+    // 밑그림이 있는 자리에만 칸을 깔고 '-' 를 적는다
+    for (let i = 0; i < patterned; i++) {
+      const q = cells[i];
+      const x0 = bx[q.x];
+      const y0 = by[q.y];
+      const w = bx[q.x + 1] - x0;
+      const h = by[q.y + 1] - y0;
 
       b.fillStyle = CELL_BG;
-      b.fillRect(x + 1, y + 1, cell - 2, cell - 2);
-      b.strokeStyle = CELL_EDGE;
-      b.strokeRect(x + 1.5, y + 1.5, cell - 3, cell - 3);
+      b.fillRect(x0, y0, w, h);
+
+      // 테두리는 칸 안쪽에 그린다 — 밖으로 나가면 옆 칸을 침범한다
+      b.fillStyle = CELL_EDGE;
+      b.fillRect(x0, y0, w, line);
+      b.fillRect(x0, y0 + h - line, w, line);
+      b.fillRect(x0, y0, line, h);
+      b.fillRect(x0 + w - line, y0, line, h);
 
       b.fillStyle = CELL_NUM;
-      b.fillText(String(q.d), x + cell / 2, y + cell / 2);
+      setFont(b, want);
+      b.fillText('-', x0 + w / 2, y0 + h / 2);
     }
 
     base = c;
+    needsFull = true;
   }
 
   /* ── 합성 ─────────────────────────────────────────────────────── */
   function draw(
-    occupied: ReadonlySet<number>,
+    labels: ReadonlyMap<number, string>,
     growSlot: number,
     growT: number,
     time: number,
   ): void {
     if (!base) return;
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(base, 0, 0);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // 채워진 자리가 바뀌었거나 판을 새로 깔았으면 통째로 다시 그린다
+    const full = needsFull || labels !== lastLabels;
 
-    const fs = Math.max(8, cell * 0.42);
-    ctx.font = fs + 'px "SM3SJGothic", "Malgun Gothic", sans-serif';
+    if (full) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(base, 0, 0);
+      stepOf.clear();
+      lastLabels = labels;
+      needsFull = false;
+    }
+
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    for (const i of occupied) {
+    const cellDev = cols ? canvas.width / cols : 1;
+    const want = Math.max(7, cellDev * 0.42);
+
+    for (const [i, text] of labels) {
       const q = cells[i];
       if (!q) continue;
-      const x = q.x * cell;
-      const y = q.y * cell;
 
-      // 방금 채워진 칸은 스며들 듯 나타난다
-      const a = i === growSlot ? growT : 1;
-      if (a <= 0) continue;
-
-      // 칸마다 다른 위상으로 스펙트럼을 오간다
+      // 칸마다 다른 위상으로 회색 스펙트럼을 오간다
       const phase = hash(q.x, q.y, 401) * Math.PI * 2;
       const k = 0.5 + 0.5 * Math.sin(time * TWO_PI_OVER_BREATH + phase);
       const step = (k * (STEPS - 1)) | 0;
 
-      ctx.globalAlpha = a;
-      ctx.fillStyle = TONE_BG[step];
-      ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+      // 스며드는 중인 칸은 투명도가 매 프레임 달라지니 계속 다시 그린다
+      const growing = i === growSlot && growT < 1;
+      if (!full && !growing && stepOf.get(i) === step) continue;
 
-      ctx.fillStyle = TONE_FG[step];
-      ctx.fillText(String(q.d), x + cell / 2, y + cell / 2);
+      const x0 = bx[q.x];
+      const y0 = by[q.y];
+      const w = bx[q.x + 1] - x0;
+      const h = by[q.y + 1] - y0;
+
+      // 밑그림에서 이 칸만 도로 떠다 붙인다. 경계가 정수라 딱 맞는다.
+      if (!full) ctx.drawImage(base, x0, y0, w, h, x0, y0, w, h);
+
+      const a = i === growSlot ? growT : 1;
+      if (a > 0) {
+        ctx.globalAlpha = a;
+        ctx.fillStyle = TONE_BG[step];
+        ctx.fillRect(x0, y0, w, h);
+
+        ctx.fillStyle = TONE_FG[step];
+        // 칸 너비의 86% 안에 들어가게 — 세 자리, 네 자리도 넘치지 않는다
+        setFont(ctx, fitSize(ctx, text, w * 0.86, want));
+        ctx.fillText(text, x0 + w / 2, y0 + h / 2);
+        ctx.globalAlpha = 1;
+      }
+
+      // 자라는 중에는 -1 로 남겨 다음 프레임에도 반드시 다시 그리게 한다
+      stepOf.set(i, growing ? -1 : step);
     }
-    ctx.globalAlpha = 1;
   }
 
   /* ── 크기 ─────────────────────────────────────────────────────── */
   function resize(w: number, h: number): void {
-    W = w;
-    H = h;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    // 화면을 딱 나누어 떨어지는 칸 크기를 고른다 (모눈이 끝에서 잘리지 않게)
-    cols = Math.max(8, Math.round(w / CELL_TARGET));
-    cell = w / cols;
-    rows = Math.ceil(h / cell);
+    const wDev = Math.max(1, Math.round(w * dpr));
+    const hDev = Math.max(1, Math.round(h * dpr));
 
     // 백버퍼 크기만 바꾼다. style 로 px 를 박아버리면 CSS 크기가 고정되어
     // 창을 줄여도 ResizeObserver 가 다시 울리지 않는다.
-    canvas.width = Math.max(1, Math.round(w * dpr));
-    canvas.height = Math.max(1, Math.round(h * dpr));
+    canvas.width = wDev;
+    canvas.height = hDev;
 
+    cols = Math.max(8, Math.round(w / CELL_TARGET));
+
+    // 칸은 정사각형으로 두고, 세로는 화면을 덮을 만큼 줄을 늘린다
+    const cellDev = wDev / cols;
+    rows = Math.max(1, Math.ceil(hDev / cellDev));
+
+    bx = new Int32Array(cols + 1);
+    for (let i = 0; i <= cols; i++) bx[i] = Math.round(i * cellDev);
+    by = new Int32Array(rows + 1);
+    for (let j = 0; j <= rows; j++) by[j] = Math.round(j * cellDev);
+
+    fitted.clear();
     build();
     paintBase();
   }
 
   return {
-    get cell() {
-      return cell;
-    },
-    get cells() {
-      return cells;
+    get cellSize() {
+      return cols ? canvas.width / cols / dpr : CELL_TARGET;
     },
     get capacity() {
       return cells.length;
     },
+    get patterned() {
+      return patterned;
+    },
     hit(px, py) {
-      const x = Math.floor(px / cell);
-      const y = Math.floor(py / cell);
+      if (!cols) return -1;
+      const cellDev = canvas.width / cols;
+      const x = Math.floor((px * dpr) / cellDev);
+      const y = Math.floor((py * dpr) / cellDev);
+      if (x < 0 || x >= cols || y < 0 || y >= rows) return -1;
       const i = lookup.get(y * cols + x);
       return i === undefined ? -1 : i;
     },
     rectOf(i) {
       const q = cells[i];
-      return { x: q.x * cell, y: q.y * cell, w: cell, h: cell };
+      if (!q) return { x: 0, y: 0, w: 0, h: 0 };
+      return {
+        x: bx[q.x] / dpr,
+        y: by[q.y] / dpr,
+        w: (bx[q.x + 1] - bx[q.x]) / dpr,
+        h: (by[q.y + 1] - by[q.y]) / dpr,
+      };
     },
     draw,
     resize,

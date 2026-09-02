@@ -464,6 +464,79 @@ html, body {
   pointer-events: none;
 }
 
+/* ── 안내 화면 ──────────────────────────────────────────────────────
+   아무도 없을 때 판면을 살짝 덮는다. 커서를 가로채지 않으므로
+   덮여 있는 동안에도 아래가 그대로 동작한다 — 어차피 손대는 순간 걷힌다. */
+.attract {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  /* 가운데보다 살짝 위에 놓인다 — 아래로 치우치면 입력줄과 부딪힌다 */
+  padding-bottom: 8vh;
+  /* 바탕은 비워둔다 — 사진은 아래 ::before 가 깐다 */
+  pointer-events: none;
+  transition: opacity 700ms ease;
+}
+
+/*  배경 사진을 70% 로 얹는다.
+    글자에는 영향이 없게 따로 층을 둔다 — .attract 자체에 opacity 를
+    주면 문구까지 같이 흐려진다. */
+.attract::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/img/attract-bg.webp") center / cover no-repeat;
+  opacity: 0.7;
+}
+
+.attract-in {
+  position: relative;
+}
+
+.attract-in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6.5vh;
+}
+
+/*  사진은 세 갈래로 잡아 어느 화면에서도 잘리지 않는다 —
+    가로 비율, 세로 비율(원본 비율 2.219 를 곱해 폭으로 환산), 절대 상한. */
+.attract-in img {
+  display: block;
+  width: min(55vw, calc(46vh * 2.219), 1120px);
+  height: auto;
+}
+
+.attract.away {
+  opacity: 0;
+}
+
+/*  이 폰트는 굵은 자족이 없다(03 한 벌뿐). font-weight 를 올리면
+    가짜 굵기가 붙거나 대체 폰트로 튄다. 대신 같은 흰색으로 획을 둘러
+    글자 면적을 넓힌다 — 어두운 바탕에서 훨씬 또렷해진다. */
+.attract p {
+  margin: 0;
+  text-align: center;
+  /*  좁은 화면에서 줄이 넘치지 않게 vw 로도 한 번 잡아둔다.
+      가장 긴 줄이 글자 크기의 약 13배라 4.6vw 면 어디서도 들어간다. */
+  font-size: calc(min(64px, 4.6vw) / var(--zoom));
+  font-weight: 400;
+  line-height: 1.85;
+  letter-spacing: -0.005em;
+  color: #fff;
+  /* em 이라 글자 크기를 따라 획도 같이 두꺼워진다 */
+  -webkit-text-stroke: 0.022em #fff;
+  paint-order: stroke fill;
+  word-break: keep-all;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attract { transition-duration: 1ms; }
+}
+
 /* ── 관리자 삭제 확인 ──────────────────────────────────────────── */
 .confirm {
   position: fixed;
