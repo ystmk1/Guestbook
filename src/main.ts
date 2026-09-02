@@ -3,6 +3,7 @@ import './style.css';
 import { LIMITS, type Entry } from './config';
 import { Store } from './store';
 import { createPaper } from './grid';
+import { exportLog } from './export';
 
 /* =====================================================================
    Sympoiesis · Guestbook
@@ -147,6 +148,28 @@ window.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape') closeNote();
 });
 
+/* ── 전체 로그 내려받기 ──────────────────────────────────────────────
+   Ctrl + Alt + Shift + O. 전시 마지막 날 기록을 통째로 PDF 로 뽑는다.
+   관람객이 우연히 누를 일이 없도록 조합을 길게 잡았다. */
+let exporting = false;
+
+window.addEventListener('keydown', (ev) => {
+  // ev.key 는 수식키가 겹치면 레이아웃에 따라 엉뚱한 값이 온다.
+  // 물리 키 위치인 ev.code 로 본다.
+  if (ev.code !== 'KeyO' || !ev.ctrlKey || !ev.altKey || !ev.shiftKey) return;
+  ev.preventDefault();
+
+  if (exporting) return;
+  exporting = true;
+
+  void exportLog(entries, banner)
+    .catch(() => banner('내려받기에 실패했습니다'))
+    .finally(() => {
+      exporting = false;
+      window.setTimeout(() => banner(''), 6000);
+    });
+});
+
 /* ── 입력 ───────────────────────────────────────────────────────── */
 inputEl.maxLength = LIMITS.bodyMax;
 whoEl.maxLength = LIMITS.nameMax;
@@ -167,6 +190,24 @@ formEl.addEventListener('submit', (ev) => {
 });
 
 inputEl.focus();
+
+/* ── 알림 줄 ────────────────────────────────────────────────────────
+   운영자에게만 보이면 되는 짧은 안내. 평소에는 DOM 에 없다. */
+let bannerEl: HTMLElement | null = null;
+
+function banner(msg: string): void {
+  if (!msg) {
+    bannerEl?.remove();
+    bannerEl = null;
+    return;
+  }
+  if (!bannerEl) {
+    bannerEl = document.createElement('p');
+    bannerEl.className = 'banner';
+    document.body.appendChild(bannerEl);
+  }
+  bannerEl.textContent = msg;
+}
 
 /* ── 배경 텍스처 ────────────────────────────────────────────────────
    음소거 자동재생은 대부분 그냥 되지만, 브라우저 정책이나 절전 상태에서

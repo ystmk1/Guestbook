@@ -233,6 +233,24 @@ html, body {
   outline-offset: 3px;
 }
 
+/* ── 운영자 알림 (로그 내려받기) ───────────────────────────────── */
+.banner {
+  position: fixed;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  z-index: 20;
+  margin: 0;
+  padding: 8px 16px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 @media (max-width: 720px) {
   :root { --head: 52px; }
   .head h1 { font-size: 18px; }
