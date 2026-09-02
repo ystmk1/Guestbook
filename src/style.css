@@ -321,25 +321,35 @@ html, body {
    모눈 위에 얹히지만 커서는 통과시킨다. 사진 뒤의 칸도 호버된다. */
 .side {
   position: fixed;
-  left: calc(34px / var(--zoom));
-  top: calc(var(--gap-top) + var(--head) + var(--ticker) + 34px / var(--zoom));
+  left: calc(134px / var(--zoom));
+  top: calc(var(--gap-top) + var(--head) + var(--ticker) + 30px / var(--zoom));
   z-index: 4;
-  width: calc(220px / var(--zoom));
+  /*  본문의 줄바꿈을 그대로 지키려면 가장 긴 줄이 들어갈 폭이 필요하다.
+      11.5px 기준 약 408px. 사진 크기는 이 폭에 대한 비율로 잡는다. */
+  width: calc(410px / var(--zoom));
+  /* 사진 한 장의 폭. 캡션 블록도 이 폭을 쓴다. */
+  --shot-w: 63%;
   pointer-events: none;
 }
 
+/*  사진과 같은 너비의 블록 안에서 가운데 정렬.
+    스케치에서 2·3행의 중심이 서로 맞아 있어 그대로 따랐다. */
 .label {
-  margin: 0 0 calc(26px / var(--zoom));
+  width: var(--shot-w);
+  margin: 0 0 calc(30px / var(--zoom));
+  text-align: center;
   font-size: calc(11.5px / var(--zoom));
   line-height: 1.75;
   color: var(--ink);
 }
 
 /*  기록 사진. 사진마다 조금씩 어긋나게 놓아 붙여 놓은 인상을 만든다. */
+/*  사진을 세로로 조금씩 겹쳐 쌓는다. 스케치처럼 붙여 놓은 인상이 되고,
+    같은 세로 공간에 더 큰 사진이 들어간다.
+    % 마진은 열 폭을 기준으로 계산되므로 열 하나만 늘리면 전부 같이 커진다. */
 .shots {
   display: flex;
   flex-direction: column;
-  gap: calc(10px / var(--zoom));
 }
 
 .shots img {
@@ -349,10 +359,27 @@ html, body {
   opacity: 0.94;
 }
 
-.shots img:nth-child(1) { width: calc(150px / var(--zoom)); margin-left: calc(18px / var(--zoom)); }
-.shots img:nth-child(2) { width: calc(126px / var(--zoom)); margin-left: calc(64px / var(--zoom)); }
-.shots img:nth-child(3) { width: calc(148px / var(--zoom)); margin-left: calc(32px / var(--zoom)); }
-.shots img:nth-child(4) { width: calc(142px / var(--zoom)); margin-left: calc(4px / var(--zoom)); }
+/*  열 폭에 대한 비율이라 열 하나만 늘리면 전체가 같이 커진다.
+    들여쓰기는 스케치에서 일부러 어긋내 놓은 것을 옮긴 값이다. */
+/*  넷 다 같은 크기. 들여쓰기만 다르다 — 스케치에서 일부러 어긋내 놓은 값. */
+.shots img { width: var(--shot-w); }
+
+.shots img:nth-child(1) { margin-left: 12%; }
+.shots img:nth-child(2) { margin-left: 36%; margin-top: -2%; }
+.shots img:nth-child(3) { margin-left: 20%; margin-top: -2%; }
+.shots img:nth-child(4) { margin-left: 3%;  margin-top: -2%; }
+
+/* ── 작품 설명 ─────────────────────────────────────────────────────
+   줄바꿈을 원문 그대로 지킨다. pre-line 이라 줄 끝 공백은 흘리고
+   줄바꿈만 살린다. */
+.about {
+  margin: calc(26px / var(--zoom)) 0 0;
+  white-space: pre-line;
+  font-size: calc(11.5px / var(--zoom));
+  line-height: 1.9;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
 
 /* ── 운영자 알림 (로그 내려받기) ───────────────────────────────── */
 .banner {
