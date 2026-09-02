@@ -29,6 +29,10 @@
       확대 배율에 따라 달라지므로 main.ts 가 재서 넣는다. */
   --frame: calc(82px / var(--zoom));
 
+  /*  왼쪽 열 덩어리에 걸린 배율. main.ts 가 재서 넣는다.
+      오른쪽 줄글은 그 덩어리 밖이라 이 값으로 직접 크기를 맞춘다. */
+  --side-k: 1;
+
   /*  흰 패널들. 완전 불투명이 아니라 배경이 아주 살짝 비친다. */
   --panel: rgba(255, 255, 255, 0.9);
   --ink: #171717;
@@ -450,7 +454,8 @@ html, body {
 
   margin: 0;
   white-space: pre-line;
-  font-size: calc(11.5px / var(--zoom));
+  /* 왼쪽 캡션과 같은 11.5px 에 같은 배율을 곱한다 */
+  font-size: calc(11.5px * var(--side-k) / var(--zoom));
   line-height: 1.9;
   letter-spacing: -0.005em;
   color: var(--ink);

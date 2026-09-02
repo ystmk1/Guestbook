@@ -154,6 +154,11 @@ function fitSide(): void {
   const k = Math.max(0.5, Math.min(1.8, band / natural));
   sideInner.style.transform = `scale(${k.toFixed(4)})`;
 
+  /*  오른쪽 줄글은 이 덩어리 밖에 있어 scale 을 못 받는다. 배율을 내어주면
+      글자 크기를 같은 비율로 키워 두 글이 같은 크기로 읽힌다.
+      행간은 단위 없는 비율이라 글자를 따라 저절로 벌어진다. */
+  document.documentElement.style.setProperty('--side-k', k.toFixed(4));
+
   // transform 은 바로 반영되므로 이어서 재도 어긋나지 않는다
   placeAbout();
 }
