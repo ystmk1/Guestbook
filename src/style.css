@@ -53,7 +53,9 @@ html, body {
   object-fit: cover;
   pointer-events: none;
   opacity: 0.14;
-  filter: grayscale(1) contrast(1.12);
+  /* 흑백은 인코딩 때 이미 구워 넣었다. 여기서 grayscale() 을 또 돌리면
+     하루 종일 켜두는 화면에서 매 프레임 필터를 태우는 셈이라 뺐다. */
+  filter: contrast(1.12);
   mix-blend-mode: multiply;
 }
 
