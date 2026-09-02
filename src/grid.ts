@@ -219,6 +219,15 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
   let lookup = new Map<number, number>();
   let base: HTMLCanvasElement | null = null;
 
+  /*  증분 그리기용 기록.
+      매 프레임 화면 전체를 다시 까는 건 낭비다 — 4K·DPR2 면 프레임마다
+      830만 픽셀을 옮긴다. 실제로 색 단계가 바뀐 칸만 배경에서 도로
+      떠다 붙이고 다시 그린다. 숨쉬기가 6.5초 주기라 30fps 에서는
+      한 프레임에 한두 단계씩만 움직여, 대개 1/3 칸만 손대면 된다. */
+  const stepOf = new Map<number, number>();
+  let lastOccupied: ReadonlySet<number> | null = null;
+  let needsFull = true;
+
   /* ── 생성 ─────────────────────────────────────────────────────── */
   function build(): void {
     cells = buildCells(cols, rows);
@@ -279,6 +288,7 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
     }
 
     base = c;
+    needsFull = true;
   }
 
   /* ── 합성 ─────────────────────────────────────────────────────── */
@@ -290,10 +300,18 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
   ): void {
     if (!base) return;
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(base, 0, 0);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // 채워진 칸이 바뀌었거나 판을 새로 깔았으면 통째로 다시 그린다
+    const full = needsFull || occupied !== lastOccupied;
+
+    if (full) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(base, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      stepOf.clear();
+      lastOccupied = occupied;
+      needsFull = false;
+    }
 
     const fs = Math.max(8, cell * 0.42);
     ctx.font = fs + 'px "SM3SJGothic", "Malgun Gothic", sans-serif';
@@ -303,26 +321,43 @@ export function createPaper(canvas: HTMLCanvasElement): Paper {
     for (const i of occupied) {
       const q = cells[i];
       if (!q) continue;
-      const x = q.x * cell;
-      const y = q.y * cell;
-
-      // 방금 채워진 칸은 스며들 듯 나타난다
-      const a = i === growSlot ? growT : 1;
-      if (a <= 0) continue;
 
       // 칸마다 다른 위상으로 스펙트럼을 오간다
       const phase = hash(q.x, q.y, 401) * Math.PI * 2;
       const k = 0.5 + 0.5 * Math.sin(time * TWO_PI_OVER_BREATH + phase);
       const step = (k * (STEPS - 1)) | 0;
 
-      ctx.globalAlpha = a;
-      ctx.fillStyle = TONE_BG[step];
-      ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+      // 스며드는 중인 칸은 투명도가 매 프레임 달라지니 계속 다시 그린다
+      const growing = i === growSlot && growT < 1;
+      if (!full && !growing && stepOf.get(i) === step) continue;
 
-      ctx.fillStyle = TONE_FG[step];
-      ctx.fillText(String(q.d), x + cell / 2, y + cell / 2);
+      const x = q.x * cell;
+      const y = q.y * cell;
+      const a = i === growSlot ? growT : 1;
+
+      if (!full) {
+        // 배경에서 이 칸만 도로 떠다 붙인다.
+        // 칸 크기가 정수가 아니라 가장자리에 실밥이 남지 않게 한 픽셀 넉넉히.
+        const x0 = Math.floor(x);
+        const y0 = Math.floor(y);
+        const w = Math.ceil(x + cell) - x0;
+        const h = Math.ceil(y + cell) - y0;
+        ctx.drawImage(base, x0 * dpr, y0 * dpr, w * dpr, h * dpr, x0, y0, w, h);
+      }
+
+      if (a > 0) {
+        ctx.globalAlpha = a;
+        ctx.fillStyle = TONE_BG[step];
+        ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+
+        ctx.fillStyle = TONE_FG[step];
+        ctx.fillText(String(q.d), x + cell / 2, y + cell / 2);
+        ctx.globalAlpha = 1;
+      }
+
+      // 자라는 중에는 -1 로 남겨 다음 프레임에도 반드시 다시 그리게 한다
+      stepOf.set(i, growing ? -1 : step);
     }
-    ctx.globalAlpha = 1;
   }
 
   /* ── 크기 ─────────────────────────────────────────────────────── */

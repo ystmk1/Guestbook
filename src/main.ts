@@ -6,6 +6,7 @@ import { createPaper } from './grid';
 import { exportLog } from './export';
 import { blockAccidentalZoom, trackZoom } from './zoom';
 import { startTicker } from './ticker';
+import { startOrbit } from './orbit';
 
 /* =====================================================================
    Sympoiesis · 방명록
@@ -40,6 +41,8 @@ startTicker(
   $<HTMLElement>('ticker-track'),
   '양쪽 식물의 잎을 각각 줄기에 가깝게 잡고 기다려주세요',
 );
+
+startOrbit(document.querySelector('.shots') as HTMLElement);
 
 const paper = createPaper(canvas);
 const store = new Store();
