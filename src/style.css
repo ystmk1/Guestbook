@@ -473,8 +473,9 @@ html, body {
   z-index: 15;
   display: grid;
   place-items: center;
-  /* 가운데보다 살짝 위에 놓인다 — 아래로 치우치면 입력줄과 부딪힌다 */
-  padding-bottom: 8vh;
+  /*  아래 여백만 조금 남긴다. 이 값의 절반만큼 덩어리가 위로 올라간다 —
+      8vh 였을 때는 4vh 나 떠서 위쪽으로 치우쳐 보였다. */
+  padding-bottom: 2vh;
   /* 바탕은 비워둔다 — 사진은 아래 ::before 가 깐다 */
   pointer-events: none;
   transition: opacity 700ms ease;
@@ -499,7 +500,8 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5vh;
+  /* 사진과 글 사이 — 붙어 보여서 1.5배로 벌렸다 */
+  gap: 7.5vh;
 }
 
 /*  사진은 세 갈래로 잡아 어느 화면에서도 잘리지 않는다 —
