@@ -17,14 +17,13 @@
 const PERIOD = 54;
 
 /** 타원의 반지름 — 컨테이너 크기에 대한 비율 */
-const RX = 0.20;
+const RX = 0.24;
 const RY = 0.29;
 
-/*  궤도에 있을 때 크기 (뒤 → 앞).
-    앞뒤 차를 크게 벌려야 도는 것이 평면이 아니라 깊이로 읽힌다.
-    뒤로 물러난 쪽은 지금 크기를 그대로 두고 앞쪽만 키운다. */
-const BACK = 0.78;
-const FRONT = 1.45;
+/*  궤도를 도는 동안은 넷 다 같은 크기다.
+    크기로 깊이를 주면 사진마다 커졌다 작아졌다 해서 산만하다.
+    앞뒤는 겹치는 순서로만 구분하고, 크기는 커서를 올렸을 때만 바뀐다. */
+const ORBIT = 1;
 
 /** 커서를 올렸을 때 배율 */
 const OPEN = 2.55;
@@ -161,22 +160,20 @@ export function startOrbit(host: HTMLElement): void {
 
       const a = angle + s.phase;
 
-      // 아래쪽(sin > 0)을 앞으로 친다 — 눕힌 타원을 위에서 보는 인상
+      // 아래쪽(sin > 0)을 앞으로 친다 — 겹치는 순서를 정하는 데만 쓴다
       const depth = (Math.sin(a) + 1) / 2;
 
       const orbitX = Math.cos(a) * rx;
       const orbitY = Math.sin(a) * ry;
-      const orbitScale = lerp(BACK, FRONT, depth);
 
       // 열릴수록 가운데로 오면서 커진다
       const t = s.open;
       const x = lerp(orbitX, openX, t);
       const y = lerp(orbitY, openY, t);
-      const scale = lerp(orbitScale, OPEN, t);
+      const scale = lerp(ORBIT, OPEN, t);
 
-      // 하나가 열리면 나머지는 물러난다
-      const base = (0.62 + 0.38 * depth) * (1 - focus * 0.72);
-      const alpha = lerp(base, 1, t);
+      // 하나가 열리면 나머지는 물러난다. 그때 말고는 넷 다 똑같이 보인다.
+      const alpha = lerp(1 - focus * 0.72, 1, t);
 
       s.el.style.transform =
         `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) ` +
