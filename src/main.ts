@@ -147,6 +147,16 @@ function placeAbout(): void {
 }
 
 function fitSide(): void {
+  /*  왼쪽 열이 내려갈 수 있는 바닥 = 입력줄 윗변.
+      높이를 상수로 박지 않고 실제로 잰다 — 글꼴이나 확대 배율에 따라
+      입력줄 높이가 달라진다.
+      밴드 높이를 읽기 전에 넣어야 이번 호출에서 바로 반영된다. */
+  const composeTop = formEl.getBoundingClientRect().top;
+  if (composeTop > 0) {
+    const floor = Math.max(0, Math.round(window.innerHeight - composeTop));
+    document.documentElement.style.setProperty('--side-bottom', `${floor}px`);
+  }
+
   const band = sideEl.clientHeight;
   const natural = sideInner.offsetHeight;
   if (!band || !natural) return;

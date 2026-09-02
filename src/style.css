@@ -345,7 +345,9 @@ html, body {
   position: fixed;
   left: var(--frame);
   top: calc(var(--gap-top) + var(--head) + var(--ticker) + var(--side-pad));
-  bottom: var(--side-pad);
+  /*  입력줄 윗변에서 끊는다. 사진 밑단이 입력줄을 넘지 않게 하려는 것.
+      입력줄 높이는 글꼴에 따라 조금씩 달라서 main.ts 가 재서 넣는다. */
+  bottom: var(--side-bottom, 92px);
   z-index: 4;
   /*  본문의 줄바꿈을 그대로 지키려면 가장 긴 줄이 들어갈 폭이 필요하다.
       11.5px 기준 약 408px. 사진 크기는 이 폭에 대한 비율로 잡는다. */
