@@ -22,7 +22,12 @@
   --ticker: calc(26px / var(--zoom));
 
   /*  왼쪽 열의 위아래 여백. 이 값만 지키고 덩어리 크기는 알아서 맞춘다. */
-  --side-pad: calc(30px / var(--zoom));
+  --side-pad: calc(44px / var(--zoom));
+
+  /*  판면을 두르는 좌우 여백. 오른쪽 설명 줄글의 위 여백과 같은 값이라
+      네 변이 같은 폭으로 둘러싸인 것처럼 보인다. 그 위 여백은 왼쪽 열의
+      확대 배율에 따라 달라지므로 main.ts 가 재서 넣는다. */
+  --frame: calc(82px / var(--zoom));
 
   /*  흰 패널들. 완전 불투명이 아니라 배경이 아주 살짝 비친다. */
   --panel: rgba(255, 255, 255, 0.9);
@@ -121,13 +126,21 @@ html, body {
 }
 
 /*  같은 내용을 두 벌 이어 붙이고 정확히 절반만큼 밀어낸다.
-    끝과 처음이 맞물려서 이음매가 보이지 않는다. */
+    끝과 처음이 맞물려서 이음매가 보이지 않는다.
+
+    애니메이션은 단축 속성 대신 낱개로 적는다. animation: … var(--x) …
+    처럼 단축 속성 안에 var 를 넣으면 구형 브라우저에서 선언이 통째로
+    무효가 되어, 글자는 보이는데 가만히 서 있는 상태가 된다.
+    폭과 길이는 ticker.ts 가 값으로 직접 넣는다. */
 .ticker-track {
   display: flex;
   width: max-content;
   height: 100%;
   align-items: center;
-  animation: ticker var(--ticker-dur, 90s) linear infinite;
+  animation-name: ticker;
+  animation-duration: 90s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 .ticker-set {
@@ -146,10 +159,6 @@ html, body {
 @keyframes ticker {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ticker-track { animation: none; }
 }
 
 /* ── 모눈 ───────────────────────────────────────────────────────── */
@@ -330,8 +339,7 @@ html, body {
     입력줄과는 가로로 겹치지 않는다 — 입력줄은 화면 가운데에 있다. */
 .side {
   position: fixed;
-  /* 화면 왼쪽에 붙인다. 여백은 글자가 모서리에 닿지 않을 만큼만. */
-  left: calc(20px / var(--zoom));
+  left: var(--frame);
   top: calc(var(--gap-top) + var(--head) + var(--ticker) + var(--side-pad));
   bottom: var(--side-pad);
   z-index: 4;
@@ -431,7 +439,7 @@ html, body {
    글자 뒤의 칸도 그대로 호버되고, 방명록(z-index 5)은 그 위로 뜬다. */
 .about {
   position: fixed;
-  right: calc(20px / var(--zoom));
+  right: var(--frame);
   /* 첫 그림이 그려지기 전 왼쪽 위에서 번쩍이지 않게 대충 맞춰 둔다 */
   top: calc(var(--head) + var(--ticker) + var(--side-pad));
   z-index: 2;
@@ -535,6 +543,9 @@ html, body {
   .about { display: none; }
 }
 
+/*  '동작 줄이기'가 켜져 있어도 전광판은 멈추지 않는다 — 장식이 아니라
+    작동법을 알리는 띠라서, 서 버리면 안내가 안 된다.
+    깜빡이는 연출인 쪽지만 사실상 끈다. */
 @media (prefers-reduced-motion: reduce) {
   .note { animation-duration: 1ms; }
 }

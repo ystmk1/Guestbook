@@ -129,11 +129,21 @@ const sideInner = $<HTMLElement>('side-inner');
 const aboutEl = document.querySelector('.about') as HTMLElement | null;
 const l2El = document.querySelector('.label .l2') as HTMLElement | null;
 
+const tickerEl = document.querySelector('.ticker') as HTMLElement | null;
+
 function placeAbout(): void {
   if (!aboutEl || !l2El) return;
   // 좁은 화면에서는 둘 다 숨어 있다 — 잰 값이 0이면 손대지 않는다
   const y = l2El.getBoundingClientRect().top;
-  if (y > 0) aboutEl.style.top = `${Math.round(y)}px`;
+  if (y <= 0) return;
+  aboutEl.style.top = `${Math.round(y)}px`;
+
+  /*  좌우 여백을 이 줄글의 위 여백과 같은 값으로 맞춘다 — 판면이 같은 폭
+      으로 둘러싸인 것처럼 보인다. 좌우 여백은 세로 배치를 건드리지 않으므로
+      되먹여도 다시 재는 일이 없다. */
+  const top = tickerEl ? tickerEl.getBoundingClientRect().bottom : 0;
+  const frame = Math.round(y - top);
+  if (frame > 0) document.documentElement.style.setProperty('--frame', `${frame}px`);
 }
 
 function fitSide(): void {
