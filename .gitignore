@@ -24,3 +24,7 @@ image*.png
 
 # 프로젝트 뿌리의 원본 이미지 — public/img/ 의 압축본만 배포한다
 /*.png
+
+/*.JPG
+/*.jpg
+/*.jpeg

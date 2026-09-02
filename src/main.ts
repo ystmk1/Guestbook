@@ -56,7 +56,10 @@ const slotOf = new Map<string, number>();
 /** 기록 id → 화면에 보이는 번호 */
 const numberOf = new Map<string, number>();
 
-let occupied: ReadonlySet<number> = new Set();
+/*  자리 번호 → 그 칸에 적을 글자.
+    적히는 건 거리값이 아니라 방명록 순번이다. 안 채워진 칸에는
+    밑그림에 '-' 만 있다. */
+let labelOf: ReadonlyMap<number, string> = new Map();
 
 let hoverSlot = -1;
 
@@ -95,8 +98,12 @@ function remap(): void {
     bySlot.set(scan, e);
   }
 
-  for (const [slot, e] of bySlot) slotOf.set(e.id, slot);
-  occupied = new Set(bySlot.keys());
+  const labels = new Map<number, string>();
+  for (const [slot, e] of bySlot) {
+    slotOf.set(e.id, slot);
+    labels.set(slot, String(numberOf.get(e.id) ?? 0));
+  }
+  labelOf = labels;
 }
 
 /* ── 그리기 ─────────────────────────────────────────────────────
@@ -112,7 +119,7 @@ function frame(now: number): void {
   lastPaint = now;
 
   if (growT < 1) growT = Math.min(1, (now - growAt) / 500);
-  paper.draw(occupied, growSlot, growT, now / 1000);
+  paper.draw(labelOf, growSlot, growT, now / 1000);
 }
 
 requestAnimationFrame(frame);
@@ -345,7 +352,6 @@ whoEl.maxLength = LIMITS.nameMax;
 formEl.addEventListener('submit', (ev) => {
   ev.preventDefault();
   if (!inputEl.value.trim()) return;
-  if (bySlot.size >= paper.capacity) return;
 
   if (store.add(inputEl.value, whoEl.value)) {
     // 이름까지 비운다. 전시장에서는 다음 차례가 다른 사람이라
