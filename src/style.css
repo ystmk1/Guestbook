@@ -488,18 +488,17 @@ html, body {
 .attract p {
   margin: 0;
   text-align: center;
-  font-size: calc(40px / var(--zoom));
+  /*  좁은 화면에서 줄이 넘치지 않게 vw 로도 한 번 잡아둔다.
+      가장 긴 줄이 글자 크기의 약 13배라 4.6vw 면 어디서도 들어간다. */
+  font-size: calc(min(64px, 4.6vw) / var(--zoom));
   font-weight: 400;
-  line-height: 1.95;
+  line-height: 1.85;
   letter-spacing: -0.005em;
   color: #fff;
-  -webkit-text-stroke: calc(0.9px / var(--zoom)) #fff;
+  /* em 이라 글자 크기를 따라 획도 같이 두꺼워진다 */
+  -webkit-text-stroke: 0.022em #fff;
   paint-order: stroke fill;
   word-break: keep-all;
-}
-
-@media (max-width: 720px) {
-  .attract p { font-size: calc(24px / var(--zoom)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
