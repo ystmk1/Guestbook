@@ -8,7 +8,7 @@ export interface Entry {
 }
 
 export const LIMITS = {
-  bodyMax: 80,
+  /* 본문에는 길이 제한을 두지 않는다. 이름만 판면에 들어갈 만큼 제한한다. */
   nameMax: 12,
 } as const;
 

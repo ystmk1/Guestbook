@@ -77,6 +77,8 @@ html, body {
   display: grid;
   place-items: center;
   background: #fff;
+  /* 입력줄·쪽지 테두리와 같은 1px 먹선 */
+  border-bottom: 1px solid var(--ink);
   z-index: 3;
   pointer-events: none;
 }
@@ -109,7 +111,6 @@ html, body {
   padding: 14px 16px 12px;
   background: #fff;
   border: 1px solid var(--ink);
-  box-shadow: 3px 3px 0 rgba(24, 24, 24, 0.13);
   animation: pop 140ms ease-out;
   /* 호버로 뜨는 창이라 커서를 가로채면 안 된다.
      가로채면 쪽지 위에 커서가 올라간 순간 칸에서 벗어난 것이 되어
@@ -133,6 +134,10 @@ html, body {
   color: var(--accent);
 }
 
+/*  글자수 제한이 없으므로 줄이 늘면 상자도 같이 길어진다.
+    다만 화면을 넘길 만큼 긴 글은 잘라낸다 — 호버로만 뜨는 상자라
+    스크롤을 할 수가 없다. 번호와 시각은 항상 보이게 본문만 자른다.
+    (전문은 Ctrl+Alt+Shift+O 로 받는 txt 에 그대로 들어 있다) */
 .note-t {
   margin: 0 0 10px;
   font-size: 15px;
@@ -141,6 +146,12 @@ html, body {
   letter-spacing: -0.011em;
   word-break: keep-all;
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
+
+  max-height: calc(100vh - 210px);
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent);
 }
 
 .note-d {

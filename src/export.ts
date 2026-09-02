@@ -106,12 +106,20 @@ export function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number):
   return out.length ? out : [''];
 }
 
-interface Block {
-  index: number;
-  lines: string[];
-  meta: string;
-  height: number;
-}
+/*  한 줄 = 그려질 한 행.
+    기록 단위가 아니라 행 단위로 쪽을 나눈다. 글자수 제한이 없어져서
+    기록 하나가 한 쪽보다 길어질 수 있는데, 기록 단위로 나누면 그런
+    기록이 페이지 밖으로 넘쳐 잘린다. */
+type Row =
+  | { t: 'body'; text: string; label?: string }
+  | { t: 'meta'; text: string }
+  | { t: 'gap' };
+
+const ROW_H = {
+  body: BODY_LEAD,
+  meta: META_SIZE + 24,
+  gap: GAP,
+} as const;
 
 /** 캔버스 하나를 만들고 2D 컨텍스트를 준다 */
 function sheet(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
@@ -203,66 +211,78 @@ async function ensureFont(entries: Entry[]): Promise<void> {
   }
 }
 
-function renderPages(entries: Entry[]): HTMLCanvasElement[] {
+export function renderPages(entries: Entry[]): HTMLCanvasElement[] {
   const probe = sheet().ctx;
   probe.font = `${BODY_SIZE}px ${FONT}`;
 
-  // 1) 각 기록이 차지할 높이를 먼저 잰다
-  const blocks: Block[] = entries.map((e, i) => {
+  // 1) 모든 기록을 행으로 펼친다
+  const rows: Row[] = [];
+  entries.forEach((e, i) => {
     const lines = wrap(probe, e.body, TEXT_W);
-    const meta = (e.name ? e.name + '   ·   ' : '') + stamp(e.createdAt);
-    return {
-      index: i + 1,
-      lines,
-      meta,
-      height: lines.length * BODY_LEAD + META_SIZE + 14,
-    };
+    lines.forEach((text, k) => {
+      rows.push({ t: 'body', text, label: k === 0 ? pad(i + 1, 3) : undefined });
+    });
+    rows.push({ t: 'meta', text: (e.name ? e.name + '   ·   ' : '') + stamp(e.createdAt) });
+    rows.push({ t: 'gap' });
   });
 
-  // 2) 페이지에 담는다
+  // 2) 행을 쪽에 담는다
   const bottom = PH - MARGIN;
-  const pages: Block[][] = [];
-  let current: Block[] = [];
-  let y = MARGIN + 128 + 56; // 첫 장은 표제만큼 내려서 시작
+  const firstTop = MARGIN + 128 + 56; // 첫 장은 표제만큼 내려서 시작
+  const pages: Row[][] = [];
 
-  for (const b of blocks) {
-    if (current.length && y + b.height > bottom) {
+  let current: Row[] = [];
+  let y = firstTop;
+
+  for (const row of rows) {
+    const h = ROW_H[row.t];
+
+    if (current.length && y + h > bottom) {
       pages.push(current);
       current = [];
       y = MARGIN;
+      // 쪽 첫머리의 빈 간격은 버린다
+      if (row.t === 'gap') continue;
     }
-    current.push(b);
-    y += b.height + GAP;
+
+    current.push(row);
+    y += h;
   }
   if (current.length) pages.push(current);
   if (!pages.length) pages.push([]);
 
   // 3) 그린다
-  return pages.map((blocksOnPage, p) => {
+  return pages.map((pageRows, p) => {
     const { canvas, ctx } = sheet();
     drawFrame(ctx, p + 1, pages.length, entries.length);
 
     let cy = MARGIN;
     if (p === 0) cy = drawTitle(ctx, entries, cy);
 
-    for (const b of blocksOnPage) {
-      ctx.fillStyle = PENCIL;
-      ctx.font = `${META_SIZE}px ${FONT}`;
-      ctx.fillText(pad(b.index, 3), MARGIN, cy + BODY_SIZE);
+    for (const row of pageRows) {
+      if (row.t === 'gap') {
+        cy += ROW_H.gap;
+        continue;
+      }
+
+      if (row.t === 'meta') {
+        ctx.fillStyle = PENCIL;
+        ctx.font = `${META_SIZE}px ${FONT}`;
+        ctx.fillText(row.text, MARGIN + INDENT, cy + META_SIZE);
+        cy += ROW_H.meta;
+        continue;
+      }
+
+      if (row.label) {
+        ctx.fillStyle = PENCIL;
+        ctx.font = `${META_SIZE}px ${FONT}`;
+        ctx.fillText(row.label, MARGIN, cy + BODY_SIZE);
+      }
 
       ctx.fillStyle = INK;
       ctx.font = `${BODY_SIZE}px ${FONT}`;
-      let ly = cy + BODY_SIZE;
-      for (const line of b.lines) {
-        ctx.fillText(line, MARGIN + INDENT, ly);
-        ly += BODY_LEAD;
-      }
-
-      ctx.fillStyle = PENCIL;
-      ctx.font = `${META_SIZE}px ${FONT}`;
-      ctx.fillText(b.meta, MARGIN + INDENT, ly - BODY_LEAD + META_SIZE + 16);
-
-      cy += b.height + GAP;
+      ctx.fillText(row.text, MARGIN + INDENT, cy + BODY_SIZE);
+      cy += ROW_H.body;
     }
 
     return canvas;

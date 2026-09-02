@@ -98,20 +98,42 @@ function openNote(i: number): void {
     d.getFullYear() + '.' + p(d.getMonth() + 1) + '.' + p(d.getDate()) +
     '  ' + p(d.getHours()) + ':' + p(d.getMinutes());
 
+  // 숨김을 먼저 풀어야 실제 높이를 잴 수 있다.
+  // 글자수 제한이 없어서 줄 수에 따라 높이가 매번 달라진다.
   noteEl.hidden = false;
 
-  // 칸 옆에 붙이되 화면 밖으로 나가지 않게 잡아둔다
   const r = paper.rectOf(i);
   const top = canvas.getBoundingClientRect().top;
   const w = noteEl.offsetWidth;
   const h = noteEl.offsetHeight;
 
-  let x = r.x + r.w + 10;
-  let y = top + r.y - 6;
-  if (x + w > window.innerWidth - 12) x = r.x - w - 10;
-  if (x < 12) x = 12;
-  if (y + h > window.innerHeight - 12) y = window.innerHeight - h - 12;
-  if (y < 12) y = 12;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  /** 화면 테두리에서 최소한 이만큼은 띄운다 */
+  const EDGE = 16;
+  /** 칸과 쪽지 사이 */
+  const GAP = 10;
+  /** 아래쪽은 입력줄을 덮지 않게 더 띄운다 */
+  const FLOOR = vh - 92;
+
+  const nodeL = r.x;
+  const nodeR = r.x + r.w;
+  const nodeT = top + r.y;
+  const nodeB = top + r.y + r.h;
+
+  // 가로 — 오른쪽을 먼저 보고, 안 들어가면 왼쪽으로 뒤집는다
+  let x = nodeR + GAP;
+  if (x + w > vw - EDGE) x = nodeL - GAP - w;
+  if (x < EDGE) x = Math.min(Math.max(EDGE, nodeR + GAP), vw - EDGE - w);
+  if (x < EDGE) x = EDGE;
+
+  // 세로 — 칸 위쪽에 맞춰 내려 그리다가, 바닥을 넘으면
+  // 칸 위로 올려 붙인다 (아래쪽 칸은 위로 뜨게)
+  let y = nodeT - 6;
+  if (y + h > FLOOR) y = nodeB + 6 - h;
+  if (y < EDGE) y = EDGE;
+  if (y + h > vh - EDGE) y = Math.max(EDGE, vh - EDGE - h);
 
   noteEl.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)';
 }
@@ -177,7 +199,6 @@ window.addEventListener('keydown', (ev) => {
 });
 
 /* ── 입력 ───────────────────────────────────────────────────────── */
-inputEl.maxLength = LIMITS.bodyMax;
 whoEl.maxLength = LIMITS.nameMax;
 
 formEl.addEventListener('submit', (ev) => {
