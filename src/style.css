@@ -527,7 +527,7 @@ html, body {
         56px — 큰 화면에서 무한정 커지지 않게 */
   font-size: calc(min(56px, 4vw, 5vh) / var(--zoom));
   font-weight: 400;
-  line-height: 1.85;
+  line-height: 1.5;
   letter-spacing: -0.005em;
   color: #fff;
   /* em 이라 글자 크기를 따라 획도 같이 두꺼워진다 */
